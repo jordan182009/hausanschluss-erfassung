@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hausanschluss Erfassung</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f8f57">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hausanschluss">
+<link rel="stylesheet" href="assets/leaflet/leaflet.css">
+<script src="assets/leaflet/leaflet.js"></script>
+<style>
+  :root{
+    --bg:#f2f4f6; --card:#ffffff; --text:#1a1f24; --muted:#6b7684;
+    --accent:#2f8f57; --accent-dark:#1f6e42; --danger:#c0392b; --border:#e1e5ea;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--text);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  #app{max-width:640px;margin:0 auto;padding-bottom:90px;min-height:100%;}
+  header{position:sticky;top:0;background:var(--accent);color:#fff;padding:12px 18px;
+    display:flex;align-items:center;justify-content:space-between;z-index:10;gap:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);}
+  .header-brand{display:flex;align-items:center;gap:8px;min-width:0;}
+  .header-logo-chip{background:#fff;border-radius:8px;padding:3px 6px;display:flex;
+    align-items:center;flex-shrink:0;}
+  .header-logo-chip img{height:26px;max-width:64px;object-fit:contain;display:block;}
+  header h1{font-size:16px;margin:0;font-weight:600;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;min-width:0;}
+  header button{background:rgba(255,255,255,.18);border:none;color:#fff;padding:8px 12px;
+    border-radius:8px;font-size:14px;flex-shrink:0;}
+  main{padding:14px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+    padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .card h3{margin:0 0 4px;font-size:16px;}
+  .card .meta{color:var(--muted);font-size:13px;margin-bottom:6px;}
+  .card .notiz{font-size:14px;white-space:pre-wrap;}
+  .thumbrow{display:flex;gap:6px;margin-top:8px;overflow-x:auto;}
+  .thumbrow img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border);}
+  .empty{text-align:center;color:var(--muted);padding:60px 20px;}
+  .fab{position:fixed;right:20px;bottom:20px;width:60px;height:60px;border-radius:50%;
+    background:var(--accent);color:#fff;border:none;font-size:30px;box-shadow:0 4px 12px rgba(0,0,0,.25);
+    z-index:20;}
+  .fab:active{background:var(--accent-dark);}
+  /* Formular-Overlay */
+  #formView{position:fixed;inset:0;background:var(--bg);z-index:30;display:none;overflow-y:auto;}
+  #formView.open{display:block;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600;}
+  .field input[type=text], .field textarea, .field select{
+    width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);
+    font-size:16px;background:#fff;color:var(--text);font-family:inherit;}
+  .field select{appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%236b7684' d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;}
+  .field textarea{min-height:90px;resize:vertical;}
+  .row{display:flex;gap:10px;}
+  .row .field{flex:1;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    padding:12px 16px;border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer;}
+  .btn-primary{background:var(--accent);color:#fff;width:100%;}
+  .btn-secondary{background:#eaeef1;color:var(--text);}
+  .btn-danger{background:#fdeceb;color:var(--danger);}
+  .gpsbox{background:#eaf6ee;border:1px solid #c9e8d3;border-radius:10px;padding:10px 12px;font-size:14px;}
+  .gpsbox.ok{background:#eafaf0;border-color:#c8ecd6;color:#1e7a45;}
+  .photo-input-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .photo-thumb{position:relative;width:80px;height:80px;}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;border-radius:10px;border:1px solid var(--border);}
+  .photo-thumb .rm{position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;
+    border:none;border-radius:50%;width:22px;height:22px;font-size:13px;line-height:1;}
+  .add-photo{width:80px;height:80px;border:2px dashed var(--border);border-radius:10px;
+    display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--muted);
+    background:#fff;}
+  .toolbar{position:sticky;bottom:0;background:var(--bg);padding:12px 16px;border-top:1px solid var(--border);
+    display:flex;gap:10px;}
+  .search{margin-bottom:12px;}
+  .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:15px;}
+  .detail-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;}
+  .detail-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--border);}
+  a.maplink{color:var(--accent);font-weight:600;text-decoration:none;}
+  .status{font-size:12px;color:var(--muted);margin-top:2px;}
+
+  /* Skizzen-Editor */
+  #skizzeView{position:fixed;inset:0;background:#20242a;z-index:40;display:none;flex-direction:column;}
+  #skizzeView.open{display:flex;}
+  #skizzeView header{background:#14171b;}
+  .skizze-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;
+    background:#14171b;border-bottom:1px solid #2a2f36;}
+  .skizze-toolbar .btn{padding:9px 12px;font-size:14px;}
+  .tool-btn.active{background:var(--accent);color:#fff;}
+  .skizze-colors{display:flex;gap:8px;margin-left:auto;}
+  .colordot{width:28px;height:28px;border-radius:50%;border:2px solid #444;padding:0;cursor:pointer;}
+  .colordot.active{border-color:#fff;box-shadow:0 0 0 2px var(--accent);}
+  .skizze-canvas-wrap{position:relative;flex:1;overflow:hidden;background:
+    repeating-conic-gradient(#2b2f36 0% 25%, #23262c 0% 50%) 50% / 24px 24px;}
+  .skizze-canvas-wrap canvas{position:absolute;top:0;left:0;touch-action:none;}
+
+  /* Karten-Ansicht */
+  #mapView{position:fixed;inset:0;background:var(--bg);z-index:40;display:none;flex-direction:column;}
+  #mapView.open{display:flex;}
+  #mapContainer{flex:1;}
+  .card .cardmap-btn{margin-top:8px;}
+  .leaflet-tooltip.kml-label{background:#fff;border:1px solid #b8bfc7;border-radius:5px;
+    padding:2px 7px;font-weight:600;font-size:12px;color:#1a1f24;white-space:nowrap;
+    box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  .leaflet-tooltip.kml-label::before{border-top-color:#b8bfc7;}
+
+  /* Artikel-Auswahl */
+  #artikelPickerView{position:fixed;inset:0;background:var(--bg);z-index:40;display:none;overflow-y:auto;}
+  #artikelPickerView.open{display:block;}
+  #artikelResults .card{cursor:pointer;}
+
+  /* Unterschrift */
+  .signature-wrap{position:relative;width:100%;height:160px;background:#fff;
+    border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .signature-wrap canvas{width:100%;height:100%;touch-action:none;display:block;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="header-brand">
+      <div class="header-logo-chip"><img src="assets/logo-trinkwasser.png" alt="Trinkwasser"></div>
+      <div class="header-logo-chip"><img src="assets/logo-lindenfels.jpg" alt="Lindenfels – durchatmen im Odenwald"></div>
+      <h1>Hausanschluss Erfassung</h1>
+    </div>
+    <button id="exportBtn">Export</button>
+  </header>
+  <main>
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="Suche nach Ort, Kassenzeichen, Notiz…">
+    </div>
+    <div id="list"></div>
+  </main>
+  <button class="fab" id="newBtn" title="Neuer Eintrag">+</button>
+</div>
+
+<div id="formView">
+  <header>
+    <h1 id="formTitle">Neuer Eintrag</h1>
+    <button id="closeFormBtn">Abbrechen</button>
+  </header>
+  <main>
+    <div class="row">
+      <div class="field" style="max-width:200px;">
+        <label>Ortsteil</label>
+        <select id="fOrtsteil">
+          <option value="">– wählen –</option>
+          <option>Lindenfels (Kernstadt)</option>
+          <option>Winterkasten</option>
+          <option>Schlierbach</option>
+          <option>Kolmbach</option>
+          <option>Eulsbach</option>
+          <option>Seidenbuch</option>
+          <option>Glattbach</option>
+          <option>Winkel</option>
+          <option>Litzelröder</option>
+          <option value="__custom__">Sonstiges…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Straße / Hausnummer</label>
+        <input type="text" id="fStrasse" placeholder="z. B. Hauptstr. 26">
+      </div>
+    </div>
+    <div class="field" id="fOrtsteilCustomField" style="display:none;">
+      <label>Ortsteil (eigene Eingabe)</label>
+      <input type="text" id="fOrtsteilCustom" placeholder="Ortsteil eingeben">
+    </div>
+    <div class="field">
+      <label>Kassenzeichen</label>
+      <input type="text" id="fKassenzeichen" placeholder="z. B. 104457-200-1">
+    </div>
+    <div class="field">
+      <label>Standort (GPS)</label>
+      <div id="gpsBox" class="gpsbox">Noch kein Standort erfasst.</div>
+      <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary" id="gpsBtn">📍 Standort erfassen</button>
+        <label class="btn btn-secondary" for="kmlInput" style="margin:0;">📄 KML importieren
+          <input type="file" id="kmlInput" accept=".kml,.kmz,application/vnd.google-earth.kml+xml" style="display:none;">
+        </label>
+        <button type="button" class="btn btn-secondary" id="showMapBtn">🗺️ Karte anzeigen</button>
+      </div>
+      <div id="kmlStatus" class="status"></div>
+    </div>
+    <div class="field">
+      <label>Einmessung (Messstab / Maßband)</label>
+      <div class="row">
+        <div class="field" style="max-width:160px;">
+          <label style="font-weight:400;">Tiefe (m)</label>
+          <input type="text" id="fTiefe" inputmode="decimal" placeholder="z. B. 1,20">
+        </div>
+      </div>
+      <div id="messpunkte"></div>
+      <button type="button" class="btn btn-secondary" id="addMesspunktBtn">＋ Maßpunkt hinzufügen</button>
+    </div>
+    <div class="field">
+      <label>Fotos</label>
+      <div class="photo-input-row" id="photoRow">
+        <label class="add-photo" for="fotoInput">＋
+          <input type="file" id="fotoInput" accept="image/*" capture="environment" multiple style="display:none;">
+        </label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Skizzen</label>
+      <div class="photo-input-row" id="skizzeRow">
+        <div class="add-photo" id="addSkizzeBtn">＋</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Notizen</label>
+      <textarea id="fNotizen" placeholder="Beschreibung, Befund, Maßnahme …"></textarea>
+    </div>
+    <div class="field">
+      <label>Aufmaßblatt – verwendetes Material</label>
+      <div id="aufmassList"></div>
+      <button type="button" class="btn btn-secondary" id="addArtikelBtn">＋ Artikel hinzufügen</button>
+    </div>
+    <div class="field">
+      <label>Unterschrift des Kunden</label>
+      <div class="signature-wrap" id="signatureWrap">
+        <canvas id="signatureCanvas"></canvas>
+      </div>
+      <div style="margin-top:8px;">
+        <button type="button" class="btn btn-secondary" id="signatureClearBtn">🗑️ Unterschrift löschen</button>
+      </div>
+    </div>
+  </main>
+  <div class="toolbar">
+    <button class="btn btn-secondary" id="deleteBtn" style="display:none;">Löschen</button>
+    <button class="btn btn-secondary" id="printBtn">🖨️ Aufmaßblatt drucken</button>
+    <button class="btn btn-primary" id="saveBtn">Speichern</button>
+  </div>
+</div>
+
+<div id="skizzeView">
+  <header>
+    <h1>Skizze</h1>
+    <button id="skizzeCloseBtn">Abbrechen</button>
+  </header>
+  <div class="skizze-toolbar">
+    <label class="btn btn-secondary" for="skizzeFotoInput">📷 Foto laden
+      <input type="file" id="skizzeFotoInput" accept="image/*" capture="environment" style="display:none;">
+    </label>
+    <button type="button" class="btn btn-secondary tool-btn active" id="skizzeModePen">✏️ Stift</button>
+    <button type="button" class="btn btn-secondary tool-btn" id="skizzeModeText">🔤 Text</button>
+    <button type="button" class="btn btn-secondary" id="skizzeUndoBtn">↩️ Rückgängig</button>
+    <button type="button" class="btn btn-secondary" id="skizzeClearBtn">🗑️ Neu</button>
+    <div class="skizze-colors" id="skizzeColors">
+      <button type="button" class="colordot active" data-color="#e63946" style="background:#e63946"></button>
+      <button type="button" class="colordot" data-color="#1a1f24" style="background:#1a1f24"></button>
+      <button type="button" class="colordot" data-color="#1d6fa5" style="background:#1d6fa5"></button>
+      <button type="button" class="colordot" data-color="#f4a300" style="background:#f4a300"></button>
+      <button type="button" class="colordot" data-color="#ffffff" style="background:#ffffff"></button>
+    </div>
+  </div>
+  <div class="skizze-canvas-wrap" id="skizzeCanvasWrap">
+    <canvas id="skizzeBg"></canvas>
+    <canvas id="skizzeDraw"></canvas>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-primary" id="skizzeSaveBtn">Übernehmen</button>
+  </div>
+</div>
+
+<div id="artikelPickerView">
+  <header>
+    <h1>Artikel auswählen</h1>
+    <button id="artikelPickerCloseBtn">Abbrechen</button>
+  </header>
+  <main>
+    <div class="search">
+      <input type="text" id="artikelSearchInput" placeholder="z. B. Edelstahl Bogen 54 …">
+    </div>
+    <div id="artikelResults"></div>
+  </main>
+</div>
+
+<div id="mapView">
+  <header>
+    <h1 id="mapTitle">Karte</h1>
+    <button id="mapCloseBtn">Schließen</button>
+  </header>
+  <div id="mapContainer"></div>
+  <div class="toolbar">
+    <button class="btn btn-secondary" id="openGoogleMapsBtn">In Google Maps öffnen</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
