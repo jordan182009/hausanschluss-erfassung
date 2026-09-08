@@ -66,6 +66,7 @@ const formTitle = document.getElementById('formTitle');
 const fOrtsteil = document.getElementById('fOrtsteil');
 const fOrtsteilCustomField = document.getElementById('fOrtsteilCustomField');
 const fOrtsteilCustom = document.getElementById('fOrtsteilCustom');
+const fBearbeiter = document.getElementById('fBearbeiter');
 const fStrasse = document.getElementById('fStrasse');
 const fKassenzeichen = document.getElementById('fKassenzeichen');
 const fNotizen = document.getElementById('fNotizen');
@@ -174,7 +175,7 @@ function render(filter) {
     .sort((a, b) => b.datum.localeCompare(a.datum))
     .filter(e => {
       if (!term) return true;
-      return [e.ort, e.kassenzeichen, e.notizen].join(' ').toLowerCase().includes(term);
+      return [e.ort, e.kassenzeichen, e.notizen, e.bearbeiter].join(' ').toLowerCase().includes(term);
     });
 
   if (shown.length === 0) {
@@ -185,7 +186,7 @@ function render(filter) {
   listEl.innerHTML = shown.map(e => `
     <div class="card" data-id="${e.id}">
       <h3>${escapeHtml(e.ort || '(ohne Ort)')}</h3>
-      <div class="meta">${fmtDate(e.datum)}${e.kassenzeichen ? ' · Kassenzeichen: ' + escapeHtml(e.kassenzeichen) : ''}${e.gps ? ' · 📍 GPS erfasst' : ''}${e.tiefe ? ' · Tiefe ' + escapeHtml(e.tiefe) + ' m' : ''}${e.messpunkte && e.messpunkte.length ? ' · 📏 ' + e.messpunkte.length + ' Maßpunkt(e)' : ''}${e.kmlFile ? ' · 📄 KML' : ''}</div>
+      <div class="meta">${fmtDate(e.datum)}${e.bearbeiter ? ' · 👤 ' + escapeHtml(e.bearbeiter) : ''}${e.kassenzeichen ? ' · Kassenzeichen: ' + escapeHtml(e.kassenzeichen) : ''}${e.gps ? ' · 📍 GPS erfasst' : ''}${e.tiefe ? ' · Tiefe ' + escapeHtml(e.tiefe) + ' m' : ''}${e.messpunkte && e.messpunkte.length ? ' · 📏 ' + e.messpunkte.length + ' Maßpunkt(e)' : ''}${e.kmlFile ? ' · 📄 KML' : ''}</div>
       ${e.notizen ? `<div class="notiz">${escapeHtml(e.notizen)}</div>` : ''}
       ${e.fotos && e.fotos.length ? `<div class="thumbrow">${e.fotos.map(f => `<img src="${f.dataUrl}">`).join('')}</div>` : ''}
       ${e.skizzen && e.skizzen.length ? `<div class="thumbrow">${e.skizzen.map(s => `<img src="${s.dataUrl}">`).join('')}</div>` : ''}
@@ -317,6 +318,9 @@ function resetForm() {
   fOrtsteil.value = '';
   fOrtsteilCustom.value = '';
   fOrtsteilCustomField.style.display = 'none';
+  // Zuletzt verwendeten Bearbeiter-Namen vorschlagen, spart bei mehreren Einträgen
+  // hintereinander das erneute Eintippen.
+  fBearbeiter.value = localStorage.getItem('letzterBearbeiter') || '';
   fStrasse.value = '';
   fKassenzeichen.value = '';
   fNotizen.value = '';
@@ -351,6 +355,7 @@ function openForm(id) {
       fStrasse.value = e.ort;
     }
     fStrasse.value = e.strasse || fStrasse.value;
+    fBearbeiter.value = e.bearbeiter || '';
     fKassenzeichen.value = e.kassenzeichen || '';
     fNotizen.value = e.notizen || '';
     currentPhotos = (e.fotos || []).slice();
@@ -579,6 +584,7 @@ saveBtn.addEventListener('click', async () => {
     ort: computeOrtDisplay(),
     ortsteil: currentOrtsteil(),
     strasse: fStrasse.value.trim(),
+    bearbeiter: fBearbeiter.value.trim(),
     kassenzeichen: fKassenzeichen.value.trim(),
     notizen: fNotizen.value.trim(),
     fotos: currentPhotos,
@@ -590,6 +596,7 @@ saveBtn.addEventListener('click', async () => {
     aufmass: currentAufmass,
     unterschrift: sigHasContent ? signatureCanvas.toDataURL('image/png') : null
   };
+  if (entry.bearbeiter) localStorage.setItem('letzterBearbeiter', entry.bearbeiter);
   await dbPut(entry);
   entries = await dbGetAll();
   render(searchInput.value);
@@ -901,6 +908,7 @@ printBtn.addEventListener('click', () => {
   <div class="meta-block">
     <div><strong>Ort:</strong> ${escapeHtml(ort)}</div>
     <div><strong>Kassenzeichen:</strong> ${escapeHtml(fKassenzeichen.value.trim())}</div>
+    <div><strong>Erfasst von:</strong> ${escapeHtml(fBearbeiter.value.trim())}</div>
     <div><strong>Datum:</strong> ${new Date().toLocaleDateString('de-DE')}</div>
   </div>
   <table>

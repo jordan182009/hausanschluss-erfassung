@@ -28,6 +28,7 @@
   .header-logo-chip{background:#fff;border-radius:8px;padding:3px 6px;display:flex;
     align-items:center;flex-shrink:0;}
   .header-logo-chip img{height:26px;max-width:64px;object-fit:contain;display:block;}
+  .header-logo-chip img.logo-wide{height:auto;width:55px;max-width:none;}
   header h1{font-size:16px;margin:0;font-weight:600;white-space:nowrap;overflow:hidden;
     text-overflow:ellipsis;min-width:0;}
   header button{background:rgba(255,255,255,.18);border:none;color:#fff;padding:8px 12px;
@@ -125,7 +126,7 @@
     <div class="header-brand">
       <div class="header-logo-chip"><img src="assets/logo-lindenfels.jpg" alt="Lindenfels – durchatmen im Odenwald"></div>
       <div class="header-logo-chip"><img src="assets/logo-trinkwasser.png" alt="Trinkwasser"></div>
-      <div class="header-logo-chip"><img src="assets/logo-lautertal.png" alt="Gemeinde Lautertal Odenwald"></div>
+      <div class="header-logo-chip"><img class="logo-wide" src="assets/logo-lautertal.png" alt="Gemeinde Lautertal Odenwald"></div>
       <h1>Hausanschluss Erfassung</h1>
     </div>
     <button id="exportBtn">Export</button>
@@ -170,6 +171,10 @@
     <div class="field" id="fOrtsteilCustomField" style="display:none;">
       <label>Ortsteil (eigene Eingabe)</label>
       <input type="text" id="fOrtsteilCustom" placeholder="Ortsteil eingeben">
+    </div>
+    <div class="field">
+      <label>Erfasst von</label>
+      <input type="text" id="fBearbeiter" placeholder="Name des Mitarbeiters">
     </div>
     <div class="field">
       <label>Kassenzeichen</label>
