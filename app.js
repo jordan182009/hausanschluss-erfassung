@@ -893,8 +893,9 @@ printBtn.addEventListener('click', () => {
 </head>
 <body>
   <div class="print-header">
-    <img src="assets/logo-trinkwasser.png" alt="">
     <img src="assets/logo-lindenfels.jpg" alt="">
+    <img src="assets/logo-trinkwasser.png" alt="">
+    <img src="assets/logo-lautertal.png" alt="">
     <h1>Aufmaßblatt – Hausanschluss</h1>
   </div>
   <div class="meta-block">
