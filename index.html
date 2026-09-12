@@ -28,8 +28,7 @@
   .logo-switch{display:flex;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;}
   .header-logo-chip{background:#fff;border-radius:8px;padding:3px 6px;display:flex;
     align-items:center;flex-shrink:0;transition:opacity .15s,box-shadow .15s;}
-  .header-logo-chip img{height:26px;max-width:64px;object-fit:contain;display:block;}
-  .header-logo-chip img.logo-wide{height:auto;width:55px;max-width:none;}
+  .header-logo-chip img{height:28px;width:56px;object-fit:contain;display:block;}
   .logo-switch .header-logo-chip.gem-inactive{opacity:.35;filter:grayscale(1);}
   .logo-switch .header-logo-chip.gem-active{box-shadow:0 0 0 2px var(--accent-dark);}
   header h1{font-size:16px;margin:0;font-weight:600;white-space:nowrap;overflow:hidden;
@@ -135,7 +134,7 @@
     border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;
     text-align:left;font-size:15px;font-weight:600;color:var(--text);}
   .gemeinde-option:active{background:#eaf6ee;border-color:var(--accent);}
-  .gemeinde-option img{height:34px;max-width:70px;object-fit:contain;flex-shrink:0;}
+  .gemeinde-option img{height:36px;width:72px;object-fit:contain;flex-shrink:0;}
   .gemeinde-cancel{margin-top:16px;width:100%;}
 </style>
 </head>
@@ -146,7 +145,7 @@
       <div class="logo-switch" id="logoSwitchBtn" role="button" tabindex="0"
            title="Gemeinde wählen (Lindenfels / Lautertal)" aria-label="Gemeinde wählen">
         <div class="header-logo-chip" id="chipLindenfels"><img src="assets/logo-lindenfels.jpg" alt="Lindenfels – durchatmen im Odenwald"></div>
-        <div class="header-logo-chip" id="chipLautertal"><img class="logo-wide" src="assets/logo-lautertal.png" alt="Gemeinde Lautertal Odenwald"></div>
+        <div class="header-logo-chip" id="chipLautertal"><img src="assets/logo-lautertal.png" alt="Gemeinde Lautertal Odenwald"></div>
       </div>
       <div class="header-logo-chip"><img src="assets/logo-trinkwasser.png" alt="Trinkwasser"></div>
       <h1>Hausanschluss Erfassung</h1>
@@ -320,7 +319,7 @@
         <span>Stadt Lindenfels</span>
       </button>
       <button type="button" class="gemeinde-option" data-gemeinde="Lautertal">
-        <img class="logo-wide" src="assets/logo-lautertal.png" alt="">
+        <img src="assets/logo-lautertal.png" alt="">
         <span>Gemeinde Lautertal</span>
       </button>
     </div>
