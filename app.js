@@ -66,6 +66,11 @@ const formTitle = document.getElementById('formTitle');
 const fOrtsteil = document.getElementById('fOrtsteil');
 const fOrtsteilCustomField = document.getElementById('fOrtsteilCustomField');
 const fOrtsteilCustom = document.getElementById('fOrtsteilCustom');
+const logoSwitchBtn = document.getElementById('logoSwitchBtn');
+const chipLindenfels = document.getElementById('chipLindenfels');
+const chipLautertal = document.getElementById('chipLautertal');
+const gemeindeView = document.getElementById('gemeindeView');
+const gemeindeCancelBtn = document.getElementById('gemeindeCancelBtn');
 const fBearbeiter = document.getElementById('fBearbeiter');
 const fStrasse = document.getElementById('fStrasse');
 const fKassenzeichen = document.getElementById('fKassenzeichen');
@@ -126,6 +131,75 @@ let skBgImage = null;    // HTMLImageElement | null
 let skDrawing = false;
 let editingSkizzeIndex = null; // Index in currentSkizzen, oder null = neue Skizze
 
+// ---- Gemeinde-Auswahl ----
+// Ortsteile je Gemeinde. Lindenfels und Lautertal (Odenwald) haben getrennte Ortsteillisten,
+// deshalb muss vor der Erfassung feststehen, für welche Gemeinde der Hausanschluss ist.
+const ORTSTEILE = {
+  'Lindenfels': ['Lindenfels (Kernstadt)', 'Winterkasten', 'Schlierbach', 'Kolmbach', 'Eulsbach', 'Seidenbuch', 'Glattbach', 'Winkel', 'Litzelröder'],
+  'Lautertal': ['Reichenbach', 'Elmshausen', 'Gadernheim', 'Knoden', 'Lautern', 'Raidelbach']
+};
+let aktuelleGemeinde = localStorage.getItem('aktuelleGemeinde') || null; // zuletzt gewählte Gemeinde, für neue Einträge vorgeschlagen
+let formGemeinde = null; // Gemeinde des gerade geöffneten Formulars (neu oder Bearbeitung)
+let gemeindeChooserCallback = null;
+
+function populateOrtsteilOptions(gemeinde) {
+  const liste = ORTSTEILE[gemeinde] || [];
+  fOrtsteil.innerHTML = '<option value="">– wählen –</option>'
+    + liste.map(o => `<option>${escapeHtml(o)}</option>`).join('')
+    + '<option value="__custom__">Sonstiges…</option>';
+}
+
+function updateLogoHighlight() {
+  chipLindenfels.classList.toggle('gem-active', aktuelleGemeinde === 'Lindenfels');
+  chipLindenfels.classList.toggle('gem-inactive', aktuelleGemeinde === 'Lautertal');
+  chipLautertal.classList.toggle('gem-active', aktuelleGemeinde === 'Lautertal');
+  chipLautertal.classList.toggle('gem-inactive', aktuelleGemeinde === 'Lindenfels');
+}
+
+function setAktuelleGemeinde(g) {
+  aktuelleGemeinde = g;
+  localStorage.setItem('aktuelleGemeinde', g);
+  updateLogoHighlight();
+}
+
+function openGemeindeChooser(cb) {
+  gemeindeChooserCallback = cb || null;
+  gemeindeCancelBtn.style.display = aktuelleGemeinde ? 'inline-flex' : 'none';
+  gemeindeView.classList.add('open');
+  pushOverlayState();
+}
+
+function closeGemeindeChooser() {
+  if (gemeindeView.classList.contains('open')) history.back();
+}
+
+logoSwitchBtn.addEventListener('click', () => openGemeindeChooser());
+logoSwitchBtn.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openGemeindeChooser(); }
+});
+gemeindeCancelBtn.addEventListener('click', () => {
+  gemeindeChooserCallback = null;
+  closeGemeindeChooser();
+});
+document.querySelectorAll('.gemeinde-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const g = btn.dataset.gemeinde;
+    setAktuelleGemeinde(g);
+    const cb = gemeindeChooserCallback;
+    gemeindeChooserCallback = null;
+    if (cb) {
+      // Ein Folge-Overlay (das Formular) wird direkt im Anschluss geöffnet und legt selbst
+      // einen History-Eintrag an. Hier NICHT history.back() verwenden: das würde sich mit
+      // dem gleich folgenden pushState() aus openForm() überschneiden (back() wirkt erst
+      // asynchron) und das gerade geöffnete Formular sofort wieder schließen.
+      gemeindeView.classList.remove('open');
+      cb();
+    } else {
+      closeGemeindeChooser();
+    }
+  });
+});
+
 // ---- Overlay-Navigation ----
 // Formular, Karte, Skizzen-Editor und Artikel-Auswahl sind Vollbild-Overlays. Ohne
 // eigenen Verlaufseintrag verlässt die Zurück-Geste/-Taste des Handys dabei die ganze
@@ -138,7 +212,7 @@ function pushOverlayState() {
 }
 
 function hideTopOverlay() {
-  const stack = [mapView, artikelPickerView, skizzeView, formView];
+  const stack = [gemeindeView, mapView, artikelPickerView, skizzeView, formView];
   for (const el of stack) {
     if (el.classList.contains('open')) {
       el.classList.remove('open');
@@ -186,7 +260,7 @@ function render(filter) {
   listEl.innerHTML = shown.map(e => `
     <div class="card" data-id="${e.id}">
       <h3>${escapeHtml(e.ort || '(ohne Ort)')}</h3>
-      <div class="meta">${fmtDate(e.datum)}${e.bearbeiter ? ' · 👤 ' + escapeHtml(e.bearbeiter) : ''}${e.kassenzeichen ? ' · Kassenzeichen: ' + escapeHtml(e.kassenzeichen) : ''}${e.gps ? ' · 📍 GPS erfasst' : ''}${e.tiefe ? ' · Tiefe ' + escapeHtml(e.tiefe) + ' m' : ''}${e.messpunkte && e.messpunkte.length ? ' · 📏 ' + e.messpunkte.length + ' Maßpunkt(e)' : ''}${e.kmlFile ? ' · 📄 KML' : ''}</div>
+      <div class="meta">${e.gemeinde ? '🏛️ ' + escapeHtml(e.gemeinde) + ' · ' : ''}${fmtDate(e.datum)}${e.bearbeiter ? ' · 👤 ' + escapeHtml(e.bearbeiter) : ''}${e.kassenzeichen ? ' · Kassenzeichen: ' + escapeHtml(e.kassenzeichen) : ''}${e.gps ? ' · 📍 GPS erfasst' : ''}${e.tiefe ? ' · Tiefe ' + escapeHtml(e.tiefe) + ' m' : ''}${e.messpunkte && e.messpunkte.length ? ' · 📏 ' + e.messpunkte.length + ' Maßpunkt(e)' : ''}${e.kmlFile ? ' · 📄 KML' : ''}</div>
       ${e.notizen ? `<div class="notiz">${escapeHtml(e.notizen)}</div>` : ''}
       ${e.fotos && e.fotos.length ? `<div class="thumbrow">${e.fotos.map(f => `<img src="${f.dataUrl}">`).join('')}</div>` : ''}
       ${e.skizzen && e.skizzen.length ? `<div class="thumbrow">${e.skizzen.map(s => `<img src="${s.dataUrl}">`).join('')}</div>` : ''}
@@ -315,6 +389,8 @@ function resetForm() {
   currentSkizzen = [];
   currentAufmass = [];
   currentUnterschrift = null;
+  formGemeinde = aktuelleGemeinde;
+  populateOrtsteilOptions(formGemeinde);
   fOrtsteil.value = '';
   fOrtsteilCustom.value = '';
   fOrtsteilCustomField.style.display = 'none';
@@ -343,6 +419,10 @@ function openForm(id) {
     if (!e) return;
     editingId = id;
     formTitle.textContent = 'Eintrag bearbeiten';
+    if (e.gemeinde && e.gemeinde !== formGemeinde) {
+      formGemeinde = e.gemeinde;
+      populateOrtsteilOptions(formGemeinde);
+    }
     const bekannteOrtsteile = Array.from(fOrtsteil.options).map(o => o.value);
     if (e.ortsteil && bekannteOrtsteile.includes(e.ortsteil)) {
       fOrtsteil.value = e.ortsteil;
@@ -402,7 +482,13 @@ function computeOrtDisplay() {
   return ot || str;
 }
 
-newBtn.addEventListener('click', () => openForm(null));
+newBtn.addEventListener('click', () => {
+  if (!aktuelleGemeinde) {
+    openGemeindeChooser(() => openForm(null));
+  } else {
+    openForm(null);
+  }
+});
 closeFormBtn.addEventListener('click', closeForm);
 
 function showGps(gps) {
@@ -582,6 +668,7 @@ saveBtn.addEventListener('click', async () => {
     datum: editingId ? (entries.find(x => x.id === editingId)?.datum || new Date().toISOString()) : new Date().toISOString(),
     geaendert: new Date().toISOString(),
     ort: computeOrtDisplay(),
+    gemeinde: formGemeinde,
     ortsteil: currentOrtsteil(),
     strasse: fStrasse.value.trim(),
     bearbeiter: fBearbeiter.value.trim(),
@@ -900,12 +987,12 @@ printBtn.addEventListener('click', () => {
 </head>
 <body>
   <div class="print-header">
-    <img src="assets/logo-lindenfels.jpg" alt="">
+    ${formGemeinde === 'Lautertal' ? '<img src="assets/logo-lautertal.png" alt="">' : '<img src="assets/logo-lindenfels.jpg" alt="">'}
     <img src="assets/logo-trinkwasser.png" alt="">
-    <img src="assets/logo-lautertal.png" alt="">
     <h1>Aufmaßblatt – Hausanschluss</h1>
   </div>
   <div class="meta-block">
+    <div><strong>Gemeinde:</strong> ${escapeHtml(formGemeinde || '–')}</div>
     <div><strong>Ort:</strong> ${escapeHtml(ort)}</div>
     <div><strong>Kassenzeichen:</strong> ${escapeHtml(fKassenzeichen.value.trim())}</div>
     <div><strong>Erfasst von:</strong> ${escapeHtml(fBearbeiter.value.trim())}</div>
@@ -1140,6 +1227,7 @@ window.addEventListener('resize', () => {
   db = await openDB();
   entries = await dbGetAll();
   render('');
+  updateLogoHighlight();
 
   if ('serviceWorker' in navigator) {
     let swRefreshing = false;

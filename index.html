@@ -25,10 +25,13 @@
     display:flex;align-items:center;justify-content:space-between;z-index:10;gap:10px;
     box-shadow:0 2px 6px rgba(0,0,0,.15);}
   .header-brand{display:flex;align-items:center;gap:8px;min-width:0;}
+  .logo-switch{display:flex;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;}
   .header-logo-chip{background:#fff;border-radius:8px;padding:3px 6px;display:flex;
-    align-items:center;flex-shrink:0;}
+    align-items:center;flex-shrink:0;transition:opacity .15s,box-shadow .15s;}
   .header-logo-chip img{height:26px;max-width:64px;object-fit:contain;display:block;}
   .header-logo-chip img.logo-wide{height:auto;width:55px;max-width:none;}
+  .logo-switch .header-logo-chip.gem-inactive{opacity:.35;filter:grayscale(1);}
+  .logo-switch .header-logo-chip.gem-active{box-shadow:0 0 0 2px var(--accent-dark);}
   header h1{font-size:16px;margin:0;font-weight:600;white-space:nowrap;overflow:hidden;
     text-overflow:ellipsis;min-width:0;}
   header button{background:rgba(255,255,255,.18);border:none;color:#fff;padding:8px 12px;
@@ -118,15 +121,34 @@
   .signature-wrap{position:relative;width:100%;height:160px;background:#fff;
     border:1px solid var(--border);border-radius:10px;overflow:hidden;}
   .signature-wrap canvas{width:100%;height:100%;touch-action:none;display:block;}
+
+  /* Gemeinde-Auswahl */
+  #gemeindeView{position:fixed;inset:0;background:rgba(20,23,27,.55);z-index:50;
+    display:none;align-items:center;justify-content:center;padding:20px;}
+  #gemeindeView.open{display:flex;}
+  .gemeinde-sheet{background:var(--card);border-radius:16px;padding:24px 20px;
+    max-width:360px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.35);}
+  .gemeinde-sheet h2{margin:0 0 6px;font-size:18px;}
+  .gemeinde-sheet p{margin:0 0 18px;color:var(--muted);font-size:14px;}
+  .gemeinde-options{display:flex;flex-direction:column;gap:12px;}
+  .gemeinde-option{display:flex;align-items:center;gap:12px;padding:12px 14px;
+    border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;
+    text-align:left;font-size:15px;font-weight:600;color:var(--text);}
+  .gemeinde-option:active{background:#eaf6ee;border-color:var(--accent);}
+  .gemeinde-option img{height:34px;max-width:70px;object-fit:contain;flex-shrink:0;}
+  .gemeinde-cancel{margin-top:16px;width:100%;}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="header-brand">
-      <div class="header-logo-chip"><img src="assets/logo-lindenfels.jpg" alt="Lindenfels – durchatmen im Odenwald"></div>
+      <div class="logo-switch" id="logoSwitchBtn" role="button" tabindex="0"
+           title="Gemeinde wählen (Lindenfels / Lautertal)" aria-label="Gemeinde wählen">
+        <div class="header-logo-chip" id="chipLindenfels"><img src="assets/logo-lindenfels.jpg" alt="Lindenfels – durchatmen im Odenwald"></div>
+        <div class="header-logo-chip" id="chipLautertal"><img class="logo-wide" src="assets/logo-lautertal.png" alt="Gemeinde Lautertal Odenwald"></div>
+      </div>
       <div class="header-logo-chip"><img src="assets/logo-trinkwasser.png" alt="Trinkwasser"></div>
-      <div class="header-logo-chip"><img class="logo-wide" src="assets/logo-lautertal.png" alt="Gemeinde Lautertal Odenwald"></div>
       <h1>Hausanschluss Erfassung</h1>
     </div>
     <button id="exportBtn">Export</button>
@@ -151,15 +173,6 @@
         <label>Ortsteil</label>
         <select id="fOrtsteil">
           <option value="">– wählen –</option>
-          <option>Lindenfels (Kernstadt)</option>
-          <option>Winterkasten</option>
-          <option>Schlierbach</option>
-          <option>Kolmbach</option>
-          <option>Eulsbach</option>
-          <option>Seidenbuch</option>
-          <option>Glattbach</option>
-          <option>Winkel</option>
-          <option>Litzelröder</option>
           <option value="__custom__">Sonstiges…</option>
         </select>
       </div>
@@ -294,6 +307,24 @@
   <div id="mapContainer"></div>
   <div class="toolbar">
     <button class="btn btn-secondary" id="openGoogleMapsBtn">In Google Maps öffnen</button>
+  </div>
+</div>
+
+<div id="gemeindeView">
+  <div class="gemeinde-sheet">
+    <h2>Gemeinde wählen</h2>
+    <p>Für welchen Ort soll dieser Hausanschluss erfasst werden?</p>
+    <div class="gemeinde-options">
+      <button type="button" class="gemeinde-option" data-gemeinde="Lindenfels">
+        <img src="assets/logo-lindenfels.jpg" alt="">
+        <span>Stadt Lindenfels</span>
+      </button>
+      <button type="button" class="gemeinde-option" data-gemeinde="Lautertal">
+        <img class="logo-wide" src="assets/logo-lautertal.png" alt="">
+        <span>Gemeinde Lautertal</span>
+      </button>
+    </div>
+    <button type="button" class="btn btn-secondary gemeinde-cancel" id="gemeindeCancelBtn" style="display:none;">Abbrechen</button>
   </div>
 </div>
 
