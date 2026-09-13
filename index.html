@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Hausanschluss">
 <link rel="stylesheet" href="assets/leaflet/leaflet.css">
 <script src="assets/leaflet/leaflet.js"></script>
+<script src="assets/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#f2f4f6; --card:#ffffff; --text:#1a1f24; --muted:#6b7684;
@@ -283,7 +284,8 @@
     <div class="wva-box" id="wvaSection" style="display:none;">
       <div class="wva-heading">📋 Auftrag Trinkwasserversorgung</div>
       <div class="wva-subheading">Stadt Lindenfels – Auftrag nach der Wasserversorgungssatzung (WVS), da Rohrbruch an der Hausanschlussleitung</div>
-      <button type="button" class="btn btn-secondary" id="wvaEmailBtn" style="margin-bottom:12px;">📧 Auftrag per E-Mail senden</button>
+      <button type="button" class="btn btn-secondary" id="wvaEmailBtn" style="margin-bottom:12px;">📎 Auftrag als PDF senden</button>
+      <div class="status" id="wvaEmailStatus" style="margin-bottom:8px;"></div>
 
       <div class="wva-sub">Art des Auftrags</div>
       <div class="field">

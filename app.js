@@ -119,6 +119,7 @@ const wvaAntragseingang = document.getElementById('wvaAntragseingang');
 const wvaAbnahmeDatum = document.getElementById('wvaAbnahmeDatum');
 const wvaInterneVermerk = document.getElementById('wvaInterneVermerk');
 const wvaEmailBtn = document.getElementById('wvaEmailBtn');
+const wvaEmailStatus = document.getElementById('wvaEmailStatus');
 const fBearbeiter = document.getElementById('fBearbeiter');
 const fStrasse = document.getElementById('fStrasse');
 const fKassenzeichen = document.getElementById('fKassenzeichen');
@@ -512,10 +513,217 @@ function buildWvaEmail() {
   return { subject, body: zeilen.join('\n') };
 }
 
-wvaEmailBtn.addEventListener('click', () => {
+// Erzeugt das Auftragsformular als echtes PDF (inkl. eingebetteter Kunden-Unterschrift),
+// damit es als Datei-Anhang verschickt werden kann statt nur als Text (mailto kann
+// grundsätzlich keine Anhänge übertragen).
+function buildWvaPdfBlob() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const marginX = 15;
+  const usableWidth = 210 - marginX * 2;
+  const bottomLimit = 297 - 15;
+  let y = 18;
+
+  function ensureSpace(need) {
+    if (y + need > bottomLimit) { doc.addPage(); y = 18; }
+  }
+  function heading(text) {
+    ensureSpace(8);
+    doc.setFont(undefined, 'bold'); doc.setFontSize(12);
+    doc.text(text, marginX, y);
+    y += 6;
+    doc.setFont(undefined, 'normal'); doc.setFontSize(10);
+  }
+  function subheading(text) {
+    ensureSpace(7);
+    doc.setFont(undefined, 'bold'); doc.setFontSize(10.5);
+    doc.text(text, marginX, y);
+    y += 5.5;
+    doc.setFont(undefined, 'normal'); doc.setFontSize(10);
+  }
+  function line(text) {
+    if (!text) return;
+    doc.splitTextToSize(text, usableWidth).forEach(l => {
+      ensureSpace(5);
+      doc.text(l, marginX, y);
+      y += 5;
+    });
+  }
+  function field(label, value) { if (value) line(`${label}: ${value}`); }
+  function spacer(mm) { y += mm; }
+
+  const ort = computeOrtDisplay();
+
+  heading('AUFTRAG TRINKWASSERVERSORGUNG – STADT LINDENFELS');
+  doc.setFontSize(9);
+  line('Auftrag nach der Wasserversorgungssatzung (WVS) – Rohrbruch an der Hausanschlussleitung');
+  doc.setFontSize(10);
+  spacer(2);
+
+  field('Ort', ort);
+  field('Kassenzeichen', fKassenzeichen.value.trim());
+  field('Erfasst von', fBearbeiter.value.trim());
+  field('Datum', new Date().toLocaleDateString('de-DE'));
+  spacer(3);
+
+  field('Art des Auftrags', WVA_ART_LABELS[getRadioValue('wvaArt')] || '–');
+  field('Grund', wvaGrund.value.trim());
+  spacer(2);
+
+  subheading('1. Baugrundstück');
+  field('Straße, Haus-Nr.', fStrasse.value.trim());
+  field('Gemarkung', wvaGemarkung.value.trim());
+  field('Flur', wvaFlur.value.trim());
+  field('Flurstück(e)', wvaFlurstueck.value.trim());
+  spacer(2);
+
+  subheading('2. Bauvorhaben – Art und Nutzung');
+  const nutzungen = [];
+  if (wvaNutzungWohn.checked) nutzungen.push('Wohngebäude' + (wvaWohnungen.value.trim() ? ' mit ' + wvaWohnungen.value.trim() + ' Wohnung/en' : ''));
+  if (wvaNutzungMisch.checked) nutzungen.push('Mischnutzung');
+  if (wvaNutzungGewerbe.checked) nutzungen.push('Gewerbe' + (wvaGewerbeArt.value.trim() ? ' (' + wvaGewerbeArt.value.trim() + ')' : ''));
+  line(nutzungen.length ? nutzungen.join(', ') : '–');
+  spacer(2);
+
+  subheading('3. Bauwasser benötigt?');
+  const bw = getRadioValue('wvaBauwasser');
+  line(bw === 'ja' ? 'Ja, ab: ' + (wvaBauwasserAb.value || '–') : (bw === 'nein' ? 'Nein' : '–'));
+  spacer(2);
+
+  subheading('4. Brauchwassernutzungsanlage');
+  const brauch = getRadioValue('wvaBrauchwasser');
+  if (brauch === 'vorhanden') {
+    const verwendung = [];
+    if (wvaBrauchGarten.checked) verwendung.push('Gartenbewässerung');
+    if (wvaBrauchToilette.checked) verwendung.push('Toilettenspülung');
+    if (wvaBrauchWaschmaschine.checked) verwendung.push('Waschmaschinen');
+    if (wvaBrauchSonstige.value.trim()) verwendung.push(wvaBrauchSonstige.value.trim());
+    line('Vorhanden oder geplant' + (verwendung.length ? ' – ' + verwendung.join(', ') : ''));
+  } else if (brauch === 'nicht_vorhanden') {
+    line('Nicht vorhanden/geplant');
+  } else {
+    line('–');
+  }
+  spacer(2);
+
+  subheading('5. Fachtechnische Angaben zur Wasserversorgung');
+  field('5.1 Fließdruck (bar)', wvaFliessdruck.value.trim());
+  field('5.2 Spitzendurchfluss Vs (l/s)', wvaSpitzendurchfluss.value.trim());
+  field('5.3 Höchste Entnahmestelle (m)', wvaHoechsteEntnahme.value.trim());
+  field('Vermerk Installateur', wvaVermerkInstallateur.value.trim());
+  field('5.4 Größe des Wasserzählers', wvaZaehlergroesse.value.trim());
+  field('5.5 Anschlussnennweite', wvaAnschlussnennweite.value.trim());
+  field('5.6 Rohrmaterial', wvaRohrmaterial.value.trim());
+  field('Vermerk Wasserwerk', wvaVermerkWasserwerk.value.trim());
+  spacer(2);
+
+  subheading('6. Anlagen zum Auftrag');
+  const anlagen = [];
+  if (wvaAnlageLageplan.checked) anlagen.push('Lageplan (Kataster) 1:500');
+  if (wvaAnlageGrundriss.checked) anlagen.push('Grundriss 1:100');
+  if (wvaAnlageBetriebsbeschreibung.checked) anlagen.push('Betriebsbeschreibung');
+  if (wvaAnlageBaulast.checked) anlagen.push('Baulasterklärung/Grunddienstbarkeit');
+  line(anlagen.length ? anlagen.join(', ') : '–');
+  spacer(2);
+
+  subheading('8. Grundstückseigentümer/in');
+  field('Name, Vorname', wvaEigName.value.trim());
+  field('Adresse', wvaEigAdresse.value.trim());
+  field('Telefon', wvaEigTelefon.value.trim());
+  field('Email', wvaEigEmail.value.trim());
+  field('Datum', wvaEigDatum.value);
+  line('Einverständnis WVS eingesehen: ' + (wvaEinverstaendnis.checked ? 'Ja' : 'Nein'));
+  spacer(3);
+
+  // Unterschrift als Bild einbetten (Seitenverhältnis direkt aus der Canvas-Größe,
+  // dadurch keine Verzerrung).
+  ensureSpace(10);
+  doc.setFont(undefined, 'bold');
+  doc.text('Unterschrift Grundstückseigentümer/in:', marginX, y);
+  doc.setFont(undefined, 'normal');
+  y += 3;
+  const boxW = 70;
+  if (typeof sigHasContent !== 'undefined' && sigHasContent) {
+    const sigData = signatureCanvas.toDataURL('image/png');
+    const boxH = boxW * (signatureCanvas.height / signatureCanvas.width);
+    ensureSpace(boxH + 4);
+    doc.addImage(sigData, 'PNG', marginX, y, boxW, boxH);
+    y += boxH + 4;
+  } else {
+    y += 15;
+  }
+  doc.setDrawColor(150);
+  doc.line(marginX, y, marginX + boxW, y);
+  y += 4;
+  doc.setFontSize(8);
+  doc.text('Unterschrift Kunde / Grundstückseigentümer', marginX, y);
+  doc.setFontSize(10);
+  spacer(6);
+
+  subheading('9. Wasserinstallateur');
+  field('Name/Firma', wvaInstName.value.trim());
+  field('Adresse', wvaInstAdresse.value.trim());
+  field('Telefon', wvaInstTelefon.value.trim());
+  field('Email', wvaInstEmail.value.trim());
+  field('Datum/Unterschrift/Stempel', wvaInstDatumUnterschrift.value.trim());
+  spacer(2);
+
+  subheading('10. Interne Vermerke');
+  field('Antragseingang', wvaAntragseingang.value);
+  field('Abnahme durch Wasserwerk am', wvaAbnahmeDatum.value);
+  field('Vermerk', wvaInterneVermerk.value.trim());
+
+  const ortSlug = ort ? ort.replace(/[^\w\-]+/g, '_') : 'Rohrbruch';
+  const filename = `Auftrag_Trinkwasserversorgung_${ortSlug}.pdf`;
+  return { blob: doc.output('blob'), filename };
+}
+
+async function sendWvaPdf() {
+  wvaEmailStatus.textContent = 'PDF wird erstellt …';
+  let blob, filename;
+  try {
+    ({ blob, filename } = buildWvaPdfBlob());
+  } catch (err) {
+    console.error(err);
+    wvaEmailStatus.textContent = 'Fehler beim Erstellen des PDF.';
+    return;
+  }
+
+  const file = new File([blob], filename, { type: 'application/pdf' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      const ort = computeOrtDisplay();
+      await navigator.share({
+        files: [file],
+        title: 'Auftrag Trinkwasserversorgung',
+        text: 'Auftrag Trinkwasserversorgung – Rohrbruch Hausanschlussleitung' + (ort ? ' – ' + ort : '')
+      });
+      wvaEmailStatus.textContent = '✓ Geteilt.';
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') { wvaEmailStatus.textContent = ''; return; }
+      // Kein Abbruch, sondern echter Fehler beim Teilen: auf Download+mailto ausweichen.
+    }
+  }
+
+  // Fallback (Desktop oder kein Teilen mit Dateien möglich): PDF herunterladen und
+  // zusätzlich einen mailto-Entwurf mit Hinweis zum manuellen Anhängen öffnen.
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+
   const { subject, body } = buildWvaEmail();
-  window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-});
+  window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) +
+    '&body=' + encodeURIComponent(body + '\n\n(Das PDF wurde heruntergeladen – bitte manuell an diese E-Mail anhängen: ' + filename + ')');
+  wvaEmailStatus.textContent = `✓ PDF heruntergeladen (${filename}) – bitte manuell an die E-Mail anhängen.`;
+}
+
+wvaEmailBtn.addEventListener('click', sendWvaPdf);
 
 // ---- Neuer Eintrag: Gemeinde- und (im Rohrbruch-Modus) Leitungsart-Abfrage vorschalten ----
 function proceedToNewForm() {

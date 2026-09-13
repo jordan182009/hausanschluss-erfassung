@@ -1,9 +1,9 @@
-const CACHE_NAME = 'hausanschluss-cache-v21';
+const CACHE_NAME = 'hausanschluss-cache-v22';
 const TILE_CACHE_NAME = 'hausanschluss-tiles-v1';
 const ASSETS = [
   './', './index.html', './app.js', './manifest.json', './icon.svg',
   './assets/logo-trinkwasser.png', './assets/logo-lindenfels.jpg', './assets/logo-lautertal.png',
-  './assets/artikel.json',
+  './assets/artikel.json', './assets/jspdf.umd.min.js',
   './assets/apple-touch-icon.png', './assets/icon-192.png', './assets/icon-512.png',
   './assets/leaflet/leaflet.css', './assets/leaflet/leaflet.js',
   './assets/leaflet/images/marker-icon.png', './assets/leaflet/images/marker-icon-2x.png',
