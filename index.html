@@ -150,6 +150,31 @@
     justify-content:center;flex-shrink:0;}
   .gemeinde-option .logo-box img{max-width:100%;max-height:100%;width:auto;height:auto;display:block;}
   .gemeinde-cancel{margin-top:16px;width:100%;}
+
+  /* Leitungsart-Auswahl (Rohrbruch: Hauptleitung / Hausanschlussleitung) */
+  #leitungsartView{position:fixed;inset:0;background:rgba(20,23,27,.55);z-index:50;
+    display:none;align-items:center;justify-content:center;padding:20px;}
+  #leitungsartView.open{display:flex;}
+  .leitungsart-option{display:block;width:100%;padding:14px 16px;border-radius:12px;
+    border:1px solid var(--border);background:#fff;cursor:pointer;text-align:left;
+    font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .leitungsart-option .sub{display:block;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:3px;}
+  .leitungsart-option:active{background:#eaf6ee;border-color:var(--accent);}
+
+  /* Auftrag Trinkwasserversorgung (nur Rohrbruch an Hausanschlussleitung, Gemeinde Lindenfels) */
+  .wva-box{border:2px solid var(--accent);border-radius:12px;padding:14px 16px 4px;
+    margin-bottom:16px;background:#f7fbf8;}
+  .wva-box .wva-heading{font-weight:700;font-size:15px;margin-bottom:2px;color:var(--accent-dark);}
+  .wva-box .wva-subheading{font-size:12.5px;color:var(--muted);margin-bottom:6px;}
+  .wva-sub{font-weight:700;font-size:13px;margin:16px 0 8px;padding-top:12px;
+    border-top:1px solid var(--border);}
+  .wva-box .wva-sub:first-of-type{border-top:none;margin-top:6px;padding-top:0;}
+  .radio-row,.check-row{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:14px;margin-bottom:8px;}
+  .radio-row label,.check-row label{display:flex;align-items:center;gap:6px;font-weight:400;
+    cursor:pointer;}
+  .wva-hinweise{font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--border);
+    border-radius:8px;padding:10px 12px;line-height:1.55;margin-bottom:8px;}
+  .wva-inline-num{width:110px;}
 </style>
 </head>
 <body>
@@ -255,6 +280,209 @@
       <div id="aufmassList"></div>
       <button type="button" class="btn btn-secondary" id="addArtikelBtn">＋ Artikel hinzufügen</button>
     </div>
+    <div class="wva-box" id="wvaSection" style="display:none;">
+      <div class="wva-heading">📋 Auftrag Trinkwasserversorgung</div>
+      <div class="wva-subheading">Stadt Lindenfels – Auftrag nach der Wasserversorgungssatzung (WVS), da Rohrbruch an der Hausanschlussleitung</div>
+
+      <div class="wva-sub">Art des Auftrags</div>
+      <div class="field">
+        <div class="radio-row">
+          <label><input type="radio" name="wvaArt" value="Herstellung"> Herstellung (neuer Anschluss)</label>
+          <label><input type="radio" name="wvaArt" value="Erneuerung"> Erneuerung</label>
+          <label><input type="radio" name="wvaArt" value="Aenderung"> Änderung</label>
+          <label><input type="radio" name="wvaArt" value="Beseitigung"> Beseitigung</label>
+        </div>
+        <label style="font-weight:400;">Grund</label>
+        <input type="text" id="wvaGrund" placeholder="z. B. Rohrbruch">
+      </div>
+
+      <div class="wva-sub">1. Baugrundstück</div>
+      <div class="row">
+        <div class="field">
+          <label style="font-weight:400;">Gemarkung</label>
+          <input type="text" id="wvaGemarkung">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">Flur</label>
+          <input type="text" id="wvaFlur">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">Flurstück(e)</label>
+          <input type="text" id="wvaFlurstueck">
+        </div>
+      </div>
+
+      <div class="wva-sub">2. Bauvorhaben – Art und Nutzung</div>
+      <div class="field">
+        <div class="check-row">
+          <label><input type="checkbox" id="wvaNutzungWohn"> Wohngebäude mit</label>
+          <input type="text" id="wvaWohnungen" class="wva-inline-num" placeholder="Anzahl Wohnung/en" style="display:none;">
+          <label><input type="checkbox" id="wvaNutzungMisch"> Mischnutzung</label>
+          <label><input type="checkbox" id="wvaNutzungGewerbe"> Gewerbe, Art:</label>
+          <input type="text" id="wvaGewerbeArt" placeholder="Art des Gewerbes" style="display:none;">
+        </div>
+      </div>
+
+      <div class="wva-sub">3. Bauwasser benötigt?</div>
+      <div class="field">
+        <div class="radio-row">
+          <label><input type="radio" name="wvaBauwasser" value="nein"> Nein</label>
+          <label><input type="radio" name="wvaBauwasser" value="ja"> Ja, ab wann:</label>
+          <input type="date" id="wvaBauwasserAb" style="display:none;">
+        </div>
+      </div>
+
+      <div class="wva-sub">4. Brauchwassernutzungsanlage</div>
+      <div class="field">
+        <div class="radio-row">
+          <label><input type="radio" name="wvaBrauchwasser" value="nicht_vorhanden"> Nicht vorhanden/geplant</label>
+          <label><input type="radio" name="wvaBrauchwasser" value="vorhanden"> Vorhanden oder geplant</label>
+        </div>
+        <div class="check-row" id="wvaBrauchDetails" style="display:none;">
+          <label><input type="checkbox" id="wvaBrauchGarten"> Gartenbewässerung</label>
+          <label><input type="checkbox" id="wvaBrauchToilette"> Toilettenspülung</label>
+          <label><input type="checkbox" id="wvaBrauchWaschmaschine"> Waschmaschinen</label>
+        </div>
+        <input type="text" id="wvaBrauchSonstige" placeholder="Sonstige Nutzung" style="display:none;">
+      </div>
+
+      <div class="wva-sub">5. Fachtechnische Angaben zur Wasserversorgung</div>
+      <div class="field" style="margin-bottom:6px;">
+        <label style="font-weight:400;">Angaben vom Wasserinstallateur</label>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label style="font-weight:400;">5.1 Fließdruck (bar)</label>
+          <input type="text" id="wvaFliessdruck" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">5.2 Spitzendurchfluss Vs (l/s)</label>
+          <input type="text" id="wvaSpitzendurchfluss" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">5.3 Höchste Entnahmestelle (m)</label>
+          <input type="text" id="wvaHoechsteEntnahme" inputmode="decimal">
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-weight:400;">Vermerk (Installateur)</label>
+        <textarea id="wvaVermerkInstallateur"></textarea>
+      </div>
+      <div class="field" style="margin-bottom:6px;">
+        <label style="font-weight:400;">Angaben vom Wasserwerk der Stadt Lindenfels</label>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label style="font-weight:400;">5.4 Größe des Wasserzählers</label>
+          <input type="text" id="wvaZaehlergroesse">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">5.5 Anschlussnennweite</label>
+          <input type="text" id="wvaAnschlussnennweite">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">5.6 Rohrmaterial</label>
+          <input type="text" id="wvaRohrmaterial">
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-weight:400;">Vermerk (Wasserwerk)</label>
+        <textarea id="wvaVermerkWasserwerk"></textarea>
+      </div>
+
+      <div class="wva-sub">6. Anlagen zum Auftrag</div>
+      <div class="field">
+        <div class="check-row" style="flex-direction:column;align-items:flex-start;">
+          <label><input type="checkbox" id="wvaAnlageLageplan"> Lageplan (Kataster) 1:500 mit Anschluss ans Leitungsnetz</label>
+          <label><input type="checkbox" id="wvaAnlageGrundriss"> Grundriss des Geschosses 1:100 mit Lage des Anschlusses</label>
+          <label><input type="checkbox" id="wvaAnlageBetriebsbeschreibung"> Betriebsbeschreibung (bei gewerblichen Anlagen)</label>
+          <label><input type="checkbox" id="wvaAnlageBaulast"> Baulasterklärung/Grunddienstbarkeit (bei Fremdgrundstücken)</label>
+        </div>
+      </div>
+
+      <div class="wva-sub">7. Hinweise</div>
+      <div class="wva-hinweise">
+        a. Der Antrag ist mind. 4 Wochen vor Baubeginn einzureichen.<br>
+        b. Tiefbauarbeiten im Bereich öffentlicher Verkehrsflächen nur durch eine von der Stadt Lindenfels beauftragte Fachfirma; Erdarbeiten in Selbsthilfe nur im privaten Grundstücksbereich.<br>
+        c. Verlegung der Wasseranschlussleitung bis einschließlich Wasserzählerbügel nur durch die Stadt Lindenfels oder einen beauftragten Fachbetrieb.<br>
+        d. Die Anschlussleitung darf nicht überbaut oder mit Bäumen/Büschen überpflanzt werden – Freilegung muss stets möglich sein.<br>
+        e. Inbetriebnahme erst nach Fertigmeldung durch zugelassenen Unternehmer und durchgeführter Abnahme der Hausinstallation.
+      </div>
+
+      <div class="wva-sub">8. Grundstückseigentümer/in</div>
+      <div class="row">
+        <div class="field">
+          <label style="font-weight:400;">Name, Vorname</label>
+          <input type="text" id="wvaEigName">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">Straße, Haus-Nr., PLZ, Ort</label>
+          <input type="text" id="wvaEigAdresse">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label style="font-weight:400;">Telefon</label>
+          <input type="text" id="wvaEigTelefon">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">Email</label>
+          <input type="text" id="wvaEigEmail">
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-weight:400;">Datum</label>
+        <input type="date" id="wvaEigDatum">
+      </div>
+      <div class="field">
+        <div class="check-row">
+          <label><input type="checkbox" id="wvaEinverstaendnis"> Ich/Wir erkläre(n), dass die Wasserversorgungssatzung (WVS) eingesehen werden konnte und die Angaben sorgfältig gelesen und zur Kenntnis genommen wurden. Die Unterschrift unten (Unterschrift des Kunden) gilt als Unterschrift der/des Grundstückseigentümer/in.</label>
+        </div>
+      </div>
+
+      <div class="wva-sub">9. Wasserinstallateur</div>
+      <div class="row">
+        <div class="field">
+          <label style="font-weight:400;">Name, Vorname / Firma</label>
+          <input type="text" id="wvaInstName">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">Straße, Haus-Nr., PLZ, Ort</label>
+          <input type="text" id="wvaInstAdresse">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label style="font-weight:400;">Telefon</label>
+          <input type="text" id="wvaInstTelefon">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">Email</label>
+          <input type="text" id="wvaInstEmail">
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-weight:400;">Datum, Unterschrift, Firmenstempel</label>
+        <input type="text" id="wvaInstDatumUnterschrift" placeholder="z. B. Datum + Vermerk, falls vor Ort nicht digital unterschrieben">
+      </div>
+
+      <div class="wva-sub">10. Interne Vermerke</div>
+      <div class="row">
+        <div class="field">
+          <label style="font-weight:400;">Antragseingang</label>
+          <input type="date" id="wvaAntragseingang">
+        </div>
+        <div class="field">
+          <label style="font-weight:400;">Abnahme durch Wasserwerk am</label>
+          <input type="date" id="wvaAbnahmeDatum">
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-weight:400;">Vermerk</label>
+        <textarea id="wvaInterneVermerk"></textarea>
+      </div>
+    </div>
+
     <div class="field">
       <label>Unterschrift des Kunden</label>
       <div class="signature-wrap" id="signatureWrap">
@@ -341,6 +569,24 @@
       </button>
     </div>
     <button type="button" class="btn btn-secondary gemeinde-cancel" id="gemeindeCancelBtn" style="display:none;">Abbrechen</button>
+  </div>
+</div>
+
+<div id="leitungsartView">
+  <div class="gemeinde-sheet">
+    <h2>Wo ist der Rohrbruch?</h2>
+    <p>Betrifft der Rohrbruch die Hauptleitung oder die Hausanschlussleitung?</p>
+    <div>
+      <button type="button" class="leitungsart-option" data-leitungsart="Hauptleitung">
+        Hauptleitung
+        <span class="sub">Öffentliches Leitungsnetz</span>
+      </button>
+      <button type="button" class="leitungsart-option" data-leitungsart="Hausanschlussleitung">
+        Hausanschlussleitung
+        <span class="sub">Leitung zum Grundstück – in Lindenfels öffnet sich zusätzlich der Auftrag Trinkwasserversorgung</span>
+      </button>
+    </div>
+    <button type="button" class="btn btn-secondary gemeinde-cancel" id="leitungsartCancelBtn" style="display:none;">Abbrechen</button>
   </div>
 </div>
 

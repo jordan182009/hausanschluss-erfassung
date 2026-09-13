@@ -73,6 +73,51 @@ const gemeindeView = document.getElementById('gemeindeView');
 const gemeindeCancelBtn = document.getElementById('gemeindeCancelBtn');
 const modeSwitchBar = document.getElementById('modeSwitchBar');
 const appTitle = document.getElementById('appTitle');
+const leitungsartView = document.getElementById('leitungsartView');
+const leitungsartCancelBtn = document.getElementById('leitungsartCancelBtn');
+// ---- Auftrag Trinkwasserversorgung (nur Rohrbruch/Hausanschlussleitung/Lindenfels) ----
+const wvaSection = document.getElementById('wvaSection');
+const wvaGrund = document.getElementById('wvaGrund');
+const wvaGemarkung = document.getElementById('wvaGemarkung');
+const wvaFlur = document.getElementById('wvaFlur');
+const wvaFlurstueck = document.getElementById('wvaFlurstueck');
+const wvaNutzungWohn = document.getElementById('wvaNutzungWohn');
+const wvaWohnungen = document.getElementById('wvaWohnungen');
+const wvaNutzungMisch = document.getElementById('wvaNutzungMisch');
+const wvaNutzungGewerbe = document.getElementById('wvaNutzungGewerbe');
+const wvaGewerbeArt = document.getElementById('wvaGewerbeArt');
+const wvaBauwasserAb = document.getElementById('wvaBauwasserAb');
+const wvaBrauchDetails = document.getElementById('wvaBrauchDetails');
+const wvaBrauchGarten = document.getElementById('wvaBrauchGarten');
+const wvaBrauchToilette = document.getElementById('wvaBrauchToilette');
+const wvaBrauchWaschmaschine = document.getElementById('wvaBrauchWaschmaschine');
+const wvaBrauchSonstige = document.getElementById('wvaBrauchSonstige');
+const wvaFliessdruck = document.getElementById('wvaFliessdruck');
+const wvaSpitzendurchfluss = document.getElementById('wvaSpitzendurchfluss');
+const wvaHoechsteEntnahme = document.getElementById('wvaHoechsteEntnahme');
+const wvaVermerkInstallateur = document.getElementById('wvaVermerkInstallateur');
+const wvaZaehlergroesse = document.getElementById('wvaZaehlergroesse');
+const wvaAnschlussnennweite = document.getElementById('wvaAnschlussnennweite');
+const wvaRohrmaterial = document.getElementById('wvaRohrmaterial');
+const wvaVermerkWasserwerk = document.getElementById('wvaVermerkWasserwerk');
+const wvaAnlageLageplan = document.getElementById('wvaAnlageLageplan');
+const wvaAnlageGrundriss = document.getElementById('wvaAnlageGrundriss');
+const wvaAnlageBetriebsbeschreibung = document.getElementById('wvaAnlageBetriebsbeschreibung');
+const wvaAnlageBaulast = document.getElementById('wvaAnlageBaulast');
+const wvaEigName = document.getElementById('wvaEigName');
+const wvaEigAdresse = document.getElementById('wvaEigAdresse');
+const wvaEigTelefon = document.getElementById('wvaEigTelefon');
+const wvaEigEmail = document.getElementById('wvaEigEmail');
+const wvaEigDatum = document.getElementById('wvaEigDatum');
+const wvaEinverstaendnis = document.getElementById('wvaEinverstaendnis');
+const wvaInstName = document.getElementById('wvaInstName');
+const wvaInstAdresse = document.getElementById('wvaInstAdresse');
+const wvaInstTelefon = document.getElementById('wvaInstTelefon');
+const wvaInstEmail = document.getElementById('wvaInstEmail');
+const wvaInstDatumUnterschrift = document.getElementById('wvaInstDatumUnterschrift');
+const wvaAntragseingang = document.getElementById('wvaAntragseingang');
+const wvaAbnahmeDatum = document.getElementById('wvaAbnahmeDatum');
+const wvaInterneVermerk = document.getElementById('wvaInterneVermerk');
 const fBearbeiter = document.getElementById('fBearbeiter');
 const fStrasse = document.getElementById('fStrasse');
 const fKassenzeichen = document.getElementById('fKassenzeichen');
@@ -232,6 +277,146 @@ modeSwitchBar.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchModus(); }
 });
 
+// ---- Leitungsart (nur Rohrbruch): Hauptleitung oder Hausanschlussleitung ----
+// Wird bei jeder neuen Rohrbruch-Meldung erneut abgefragt (nicht wie die Gemeinde
+// persistiert, da sie sich von Einsatz zu Einsatz unterscheidet).
+let formLeitungsart = null;
+let leitungsartChooserCallback = null;
+
+function openLeitungsartChooser(cb) {
+  leitungsartChooserCallback = cb || null;
+  leitungsartCancelBtn.style.display = formLeitungsart ? 'inline-flex' : 'none';
+  leitungsartView.classList.add('open');
+  pushOverlayState();
+}
+
+function closeLeitungsartChooser() {
+  if (leitungsartView.classList.contains('open')) history.back();
+}
+
+leitungsartCancelBtn.addEventListener('click', () => {
+  leitungsartChooserCallback = null;
+  closeLeitungsartChooser();
+});
+document.querySelectorAll('.leitungsart-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    formLeitungsart = btn.dataset.leitungsart;
+    const cb = leitungsartChooserCallback;
+    leitungsartChooserCallback = null;
+    if (cb) {
+      // Siehe Hinweis bei der Gemeinde-Auswahl: hier NICHT history.back() verwenden,
+      // da direkt danach das Formular geöffnet wird und selbst einen History-Eintrag anlegt.
+      leitungsartView.classList.remove('open');
+      cb();
+    } else {
+      closeLeitungsartChooser();
+    }
+  });
+});
+
+// ---- Auftrag Trinkwasserversorgung ----
+// Zusatzformular (1:1 nach dem amtlichen Vordruck der Stadt Lindenfels), das nur
+// eingeblendet wird, wenn im Rohrbruch-Modus "Hausanschlussleitung" gewählt wurde
+// UND die Gemeinde Lindenfels ist (Lautertal hat ein eigenes Verfahren).
+function getRadioValue(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : '';
+}
+function setRadioValue(name, value) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach(r => { r.checked = (r.value === value); });
+}
+
+const WVA_TEXT_FIELDS = [
+  [wvaGrund, 'grund'], [wvaGemarkung, 'gemarkung'], [wvaFlur, 'flur'], [wvaFlurstueck, 'flurstueck'],
+  [wvaWohnungen, 'wohnungen'], [wvaGewerbeArt, 'gewerbeArt'], [wvaBauwasserAb, 'bauwasserAb'],
+  [wvaBrauchSonstige, 'brauchSonstige'], [wvaFliessdruck, 'fliessdruck'], [wvaSpitzendurchfluss, 'spitzendurchfluss'],
+  [wvaHoechsteEntnahme, 'hoechsteEntnahme'], [wvaVermerkInstallateur, 'vermerkInstallateur'],
+  [wvaZaehlergroesse, 'zaehlergroesse'], [wvaAnschlussnennweite, 'anschlussnennweite'], [wvaRohrmaterial, 'rohrmaterial'],
+  [wvaVermerkWasserwerk, 'vermerkWasserwerk'], [wvaEigName, 'eigName'], [wvaEigAdresse, 'eigAdresse'],
+  [wvaEigTelefon, 'eigTelefon'], [wvaEigEmail, 'eigEmail'], [wvaEigDatum, 'eigDatum'],
+  [wvaInstName, 'instName'], [wvaInstAdresse, 'instAdresse'], [wvaInstTelefon, 'instTelefon'],
+  [wvaInstEmail, 'instEmail'], [wvaInstDatumUnterschrift, 'instDatumUnterschrift'],
+  [wvaAntragseingang, 'antragseingang'], [wvaAbnahmeDatum, 'abnahmeDatum'], [wvaInterneVermerk, 'interneVermerk']
+];
+const WVA_CHECK_FIELDS = [
+  [wvaNutzungWohn, 'nutzungWohn'], [wvaNutzungMisch, 'nutzungMisch'], [wvaNutzungGewerbe, 'nutzungGewerbe'],
+  [wvaBrauchGarten, 'brauchGarten'], [wvaBrauchToilette, 'brauchToilette'], [wvaBrauchWaschmaschine, 'brauchWaschmaschine'],
+  [wvaAnlageLageplan, 'anlageLageplan'], [wvaAnlageGrundriss, 'anlageGrundriss'],
+  [wvaAnlageBetriebsbeschreibung, 'anlageBetriebsbeschreibung'], [wvaAnlageBaulast, 'anlageBaulast'],
+  [wvaEinverstaendnis, 'einverstaendnis']
+];
+
+function wvaSollSichtbarSein() {
+  return currentModus === 'rohrbruch' && formLeitungsart === 'Hausanschlussleitung' && formGemeinde === 'Lindenfels';
+}
+
+function updateWvaVisibility() {
+  wvaSection.style.display = wvaSollSichtbarSein() ? 'block' : 'none';
+}
+
+function updateWvaSubfieldVisibility() {
+  wvaWohnungen.style.display = wvaNutzungWohn.checked ? 'inline-block' : 'none';
+  wvaGewerbeArt.style.display = wvaNutzungGewerbe.checked ? 'inline-block' : 'none';
+  wvaBauwasserAb.style.display = getRadioValue('wvaBauwasser') === 'ja' ? 'inline-block' : 'none';
+  const brauchVorhanden = getRadioValue('wvaBrauchwasser') === 'vorhanden';
+  wvaBrauchDetails.style.display = brauchVorhanden ? 'flex' : 'none';
+  wvaBrauchSonstige.style.display = brauchVorhanden ? 'block' : 'none';
+}
+[wvaNutzungWohn, wvaNutzungGewerbe].forEach(el => el.addEventListener('change', updateWvaSubfieldVisibility));
+document.querySelectorAll('input[name="wvaBauwasser"], input[name="wvaBrauchwasser"]').forEach(r => {
+  r.addEventListener('change', updateWvaSubfieldVisibility);
+});
+
+function resetWvaFields() {
+  WVA_TEXT_FIELDS.forEach(([el]) => el.value = '');
+  WVA_CHECK_FIELDS.forEach(([el]) => el.checked = false);
+  ['wvaArt', 'wvaBauwasser', 'wvaBrauchwasser'].forEach(name => setRadioValue(name, ''));
+  updateWvaSubfieldVisibility();
+}
+
+function gatherWva() {
+  const w = {};
+  WVA_TEXT_FIELDS.forEach(([el, key]) => w[key] = el.value.trim());
+  WVA_CHECK_FIELDS.forEach(([el, key]) => w[key] = el.checked);
+  w.art = getRadioValue('wvaArt');
+  w.bauwasser = getRadioValue('wvaBauwasser');
+  w.brauchwasser = getRadioValue('wvaBrauchwasser');
+  return w;
+}
+
+function applyWva(w) {
+  if (!w) return;
+  WVA_TEXT_FIELDS.forEach(([el, key]) => el.value = w[key] || '');
+  WVA_CHECK_FIELDS.forEach(([el, key]) => el.checked = !!w[key]);
+  setRadioValue('wvaArt', w.art || '');
+  setRadioValue('wvaBauwasser', w.bauwasser || '');
+  setRadioValue('wvaBrauchwasser', w.brauchwasser || '');
+  updateWvaSubfieldVisibility();
+}
+
+// Sinnvolle Vorbelegung für den typischen Fall "Rohrbruch an bestehender Hausanschlussleitung".
+function applyWvaDefaultsForNewRohrbruch() {
+  if (!wvaSollSichtbarSein()) return;
+  setRadioValue('wvaArt', 'Erneuerung');
+  wvaGrund.value = 'Rohrbruch';
+  const heute = new Date().toISOString().slice(0, 10);
+  wvaEigDatum.value = heute;
+  wvaAntragseingang.value = heute;
+}
+
+// ---- Neuer Eintrag: Gemeinde- und (im Rohrbruch-Modus) Leitungsart-Abfrage vorschalten ----
+function proceedToNewForm() {
+  if (currentModus === 'rohrbruch') {
+    openLeitungsartChooser(() => {
+      openForm(null);
+      applyWvaDefaultsForNewRohrbruch();
+    });
+  } else {
+    formLeitungsart = null;
+    openForm(null);
+  }
+}
+
 // ---- Overlay-Navigation ----
 // Formular, Karte, Skizzen-Editor und Artikel-Auswahl sind Vollbild-Overlays. Ohne
 // eigenen Verlaufseintrag verlässt die Zurück-Geste/-Taste des Handys dabei die ganze
@@ -244,7 +429,7 @@ function pushOverlayState() {
 }
 
 function hideTopOverlay() {
-  const stack = [gemeindeView, mapView, artikelPickerView, skizzeView, formView];
+  const stack = [gemeindeView, leitungsartView, mapView, artikelPickerView, skizzeView, formView];
   for (const el of stack) {
     if (el.classList.contains('open')) {
       el.classList.remove('open');
@@ -296,7 +481,7 @@ function render(filter) {
   listEl.innerHTML = shown.map(e => `
     <div class="card" data-id="${e.id}">
       <h3>${escapeHtml(e.ort || '(ohne Ort)')}</h3>
-      <div class="meta">${e.gemeinde ? '🏛️ ' + escapeHtml(e.gemeinde) + ' · ' : ''}${fmtDate(e.datum)}${e.bearbeiter ? ' · 👤 ' + escapeHtml(e.bearbeiter) : ''}${e.kassenzeichen ? ' · Kassenzeichen: ' + escapeHtml(e.kassenzeichen) : ''}${e.gps ? ' · 📍 GPS erfasst' : ''}${e.tiefe ? ' · Tiefe ' + escapeHtml(e.tiefe) + ' m' : ''}${e.messpunkte && e.messpunkte.length ? ' · 📏 ' + e.messpunkte.length + ' Maßpunkt(e)' : ''}${e.kmlFile ? ' · 📄 KML' : ''}</div>
+      <div class="meta">${e.gemeinde ? '🏛️ ' + escapeHtml(e.gemeinde) + ' · ' : ''}${e.leitungsart ? '🔧 ' + escapeHtml(e.leitungsart) + ' · ' : ''}${fmtDate(e.datum)}${e.bearbeiter ? ' · 👤 ' + escapeHtml(e.bearbeiter) : ''}${e.kassenzeichen ? ' · Kassenzeichen: ' + escapeHtml(e.kassenzeichen) : ''}${e.gps ? ' · 📍 GPS erfasst' : ''}${e.tiefe ? ' · Tiefe ' + escapeHtml(e.tiefe) + ' m' : ''}${e.messpunkte && e.messpunkte.length ? ' · 📏 ' + e.messpunkte.length + ' Maßpunkt(e)' : ''}${e.kmlFile ? ' · 📄 KML' : ''}</div>
       ${e.notizen ? `<div class="notiz">${escapeHtml(e.notizen)}</div>` : ''}
       ${e.fotos && e.fotos.length ? `<div class="thumbrow">${e.fotos.map(f => `<img src="${f.dataUrl}">`).join('')}</div>` : ''}
       ${e.skizzen && e.skizzen.length ? `<div class="thumbrow">${e.skizzen.map(s => `<img src="${s.dataUrl}">`).join('')}</div>` : ''}
@@ -442,6 +627,8 @@ function resetForm() {
   kmlStatus.textContent = '';
   deleteBtn.style.display = 'none';
   formTitle.textContent = currentModus === 'rohrbruch' ? 'Neue Rohrbruch-Meldung' : 'Neuer Eintrag';
+  resetWvaFields();
+  updateWvaVisibility();
   renderPhotoRow();
   renderMesspunkte();
   renderSkizzeRow();
@@ -458,6 +645,11 @@ function openForm(id) {
     if (e.gemeinde && e.gemeinde !== formGemeinde) {
       formGemeinde = e.gemeinde;
       populateOrtsteilOptions(formGemeinde);
+    }
+    formLeitungsart = entryTyp(e) === 'rohrbruch' ? (e.leitungsart || null) : null;
+    updateWvaVisibility();
+    if (wvaSollSichtbarSein()) {
+      applyWva(e.wva);
     }
     const bekannteOrtsteile = Array.from(fOrtsteil.options).map(o => o.value);
     if (e.ortsteil && bekannteOrtsteile.includes(e.ortsteil)) {
@@ -520,9 +712,9 @@ function computeOrtDisplay() {
 
 newBtn.addEventListener('click', () => {
   if (!aktuelleGemeinde) {
-    openGemeindeChooser(() => openForm(null));
+    openGemeindeChooser(proceedToNewForm);
   } else {
-    openForm(null);
+    proceedToNewForm();
   }
 });
 closeFormBtn.addEventListener('click', closeForm);
@@ -706,6 +898,8 @@ saveBtn.addEventListener('click', async () => {
     typ: currentModus,
     ort: computeOrtDisplay(),
     gemeinde: formGemeinde,
+    leitungsart: currentModus === 'rohrbruch' ? formLeitungsart : null,
+    wva: wvaSollSichtbarSein() ? gatherWva() : null,
     ortsteil: currentOrtsteil(),
     strasse: fStrasse.value.trim(),
     bearbeiter: fBearbeiter.value.trim(),
