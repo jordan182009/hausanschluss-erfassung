@@ -23,7 +23,7 @@
   #app{max-width:640px;margin:0 auto;padding-bottom:90px;min-height:100%;}
   header{position:sticky;top:0;background:var(--accent);color:#fff;z-index:10;
     box-shadow:0 2px 6px rgba(0,0,0,.15);display:flex;flex-direction:column;}
-  .header-logos{display:flex;align-items:center;gap:10px;padding:10px 18px 6px;}
+  .header-logos{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 18px 6px;}
   .header-title-row{display:flex;align-items:center;justify-content:space-between;
     gap:10px;padding:0 18px 10px;min-width:0;}
   .logo-switch{display:flex;align-items:center;gap:8px;flex-shrink:0;cursor:pointer;}
@@ -38,7 +38,7 @@
   .logo-switch .header-logo-chip.gem-active{box-shadow:0 0 0 2px var(--accent-dark);}
   /* Umschalter zwischen Hausanschluss- und Rohrbruch-Erfassung: eigene Farbe je nach Ziel-Modus,
      zeigt an, wohin ein Klick wechselt (nicht, in welchem Modus man gerade ist). */
-  .mode-switch-bar{padding:10px 18px;text-align:center;font-weight:600;font-size:14px;
+  .mode-switch-bar{padding:11px 18px;text-align:center;font-weight:600;font-size:16px;
     color:#fff;cursor:pointer;transition:filter .15s;}
   .mode-switch-bar:active{filter:brightness(.9);}
   .mode-switch-bar.to-rohrbruch{background:var(--danger);}
@@ -156,12 +156,12 @@
 <div id="app">
   <header>
     <div class="header-logos">
+      <div class="header-logo-chip"><img src="assets/logo-trinkwasser.png" alt="Trinkwasser"></div>
       <div class="logo-switch" id="logoSwitchBtn" role="button" tabindex="0"
            title="Gemeinde wählen (Lindenfels / Lautertal)" aria-label="Gemeinde wählen">
         <div class="header-logo-chip" id="chipLindenfels"><img src="assets/logo-lindenfels.jpg" alt="Lindenfels – durchatmen im Odenwald"></div>
         <div class="header-logo-chip" id="chipLautertal"><img src="assets/logo-lautertal.png" alt="Gemeinde Lautertal Odenwald"></div>
       </div>
-      <div class="header-logo-chip"><img src="assets/logo-trinkwasser.png" alt="Trinkwasser"></div>
     </div>
     <div class="header-title-row">
       <h1 id="appTitle">Hausanschluss Erfassung</h1>
