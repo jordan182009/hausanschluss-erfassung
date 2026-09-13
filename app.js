@@ -71,6 +71,8 @@ const chipLindenfels = document.getElementById('chipLindenfels');
 const chipLautertal = document.getElementById('chipLautertal');
 const gemeindeView = document.getElementById('gemeindeView');
 const gemeindeCancelBtn = document.getElementById('gemeindeCancelBtn');
+const modeSwitchBar = document.getElementById('modeSwitchBar');
+const appTitle = document.getElementById('appTitle');
 const fBearbeiter = document.getElementById('fBearbeiter');
 const fStrasse = document.getElementById('fStrasse');
 const fKassenzeichen = document.getElementById('fKassenzeichen');
@@ -200,6 +202,36 @@ document.querySelectorAll('.gemeinde-option').forEach(btn => {
   });
 });
 
+// ---- Erfassungs-Modus (Hausanschluss / Rohrbruch) ----
+// Zwei eigenständige Erfassungsmodi mit identischer Formularstruktur, aber getrennten
+// Listen. Der Modus wird pro Eintrag als "typ" gespeichert; Einträge ohne "typ" (vor
+// Einführung dieses Features angelegt) gelten als 'hausanschluss'.
+let currentModus = localStorage.getItem('aktuellerModus') || 'hausanschluss';
+
+function entryTyp(e) {
+  return e.typ || 'hausanschluss';
+}
+
+function updateModeUI() {
+  const zielRohrbruch = currentModus === 'hausanschluss';
+  modeSwitchBar.textContent = zielRohrbruch ? '🔧 Zu Rohrbruch-Erfassung wechseln' : '🚰 Zu Hausanschluss-Erfassung wechseln';
+  modeSwitchBar.classList.toggle('to-rohrbruch', zielRohrbruch);
+  modeSwitchBar.classList.toggle('to-hausanschluss', !zielRohrbruch);
+  appTitle.textContent = currentModus === 'rohrbruch' ? 'Rohrbruch Erfassung' : 'Hausanschluss Erfassung';
+  render(searchInput.value);
+}
+
+function switchModus() {
+  currentModus = currentModus === 'hausanschluss' ? 'rohrbruch' : 'hausanschluss';
+  localStorage.setItem('aktuellerModus', currentModus);
+  updateModeUI();
+}
+
+modeSwitchBar.addEventListener('click', switchModus);
+modeSwitchBar.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchModus(); }
+});
+
 // ---- Overlay-Navigation ----
 // Formular, Karte, Skizzen-Editor und Artikel-Auswahl sind Vollbild-Overlays. Ohne
 // eigenen Verlaufseintrag verlässt die Zurück-Geste/-Taste des Handys dabei die ganze
@@ -246,6 +278,7 @@ function render(filter) {
   const term = (filter || '').trim().toLowerCase();
   const shown = entries
     .slice()
+    .filter(e => entryTyp(e) === currentModus)
     .sort((a, b) => b.datum.localeCompare(a.datum))
     .filter(e => {
       if (!term) return true;
@@ -253,7 +286,10 @@ function render(filter) {
     });
 
   if (shown.length === 0) {
-    listEl.innerHTML = '<div class="empty">Noch keine Einträge.<br>Tippe auf ＋ um einen neuen Hausanschluss-Einsatz zu erfassen.</div>';
+    const hinweis = currentModus === 'rohrbruch'
+      ? 'Noch keine Rohrbruch-Meldungen.<br>Tippe auf ＋ um einen neuen Rohrbruch-Einsatz zu erfassen.'
+      : 'Noch keine Einträge.<br>Tippe auf ＋ um einen neuen Hausanschluss-Einsatz zu erfassen.';
+    listEl.innerHTML = `<div class="empty">${hinweis}</div>`;
     return;
   }
 
@@ -405,7 +441,7 @@ function resetForm() {
   gpsBox.classList.remove('ok');
   kmlStatus.textContent = '';
   deleteBtn.style.display = 'none';
-  formTitle.textContent = 'Neuer Eintrag';
+  formTitle.textContent = currentModus === 'rohrbruch' ? 'Neue Rohrbruch-Meldung' : 'Neuer Eintrag';
   renderPhotoRow();
   renderMesspunkte();
   renderSkizzeRow();
@@ -418,7 +454,7 @@ function openForm(id) {
     const e = entries.find(x => x.id === id);
     if (!e) return;
     editingId = id;
-    formTitle.textContent = 'Eintrag bearbeiten';
+    formTitle.textContent = entryTyp(e) === 'rohrbruch' ? 'Rohrbruch-Meldung bearbeiten' : 'Eintrag bearbeiten';
     if (e.gemeinde && e.gemeinde !== formGemeinde) {
       formGemeinde = e.gemeinde;
       populateOrtsteilOptions(formGemeinde);
@@ -667,6 +703,7 @@ saveBtn.addEventListener('click', async () => {
     id: editingId || uid(),
     datum: editingId ? (entries.find(x => x.id === editingId)?.datum || new Date().toISOString()) : new Date().toISOString(),
     geaendert: new Date().toISOString(),
+    typ: currentModus,
     ort: computeOrtDisplay(),
     gemeinde: formGemeinde,
     ortsteil: currentOrtsteil(),
@@ -989,7 +1026,7 @@ printBtn.addEventListener('click', () => {
   <div class="print-header">
     ${formGemeinde === 'Lautertal' ? '<img src="assets/logo-lautertal.png" alt="">' : '<img src="assets/logo-lindenfels.jpg" alt="">'}
     <img src="assets/logo-trinkwasser.png" alt="">
-    <h1>Aufmaßblatt – Hausanschluss</h1>
+    <h1>Aufmaßblatt – ${currentModus === 'rohrbruch' ? 'Rohrbruch' : 'Hausanschluss'}</h1>
   </div>
   <div class="meta-block">
     <div><strong>Gemeinde:</strong> ${escapeHtml(formGemeinde || '–')}</div>
@@ -1226,7 +1263,7 @@ window.addEventListener('resize', () => {
 (async function init() {
   db = await openDB();
   entries = await dbGetAll();
-  render('');
+  updateModeUI();
   updateLogoHighlight();
 
   if ('serviceWorker' in navigator) {

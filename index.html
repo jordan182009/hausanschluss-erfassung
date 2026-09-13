@@ -36,6 +36,13 @@
   .header-logo-chip img{max-width:88%;max-height:88%;width:auto;height:auto;display:block;}
   .logo-switch .header-logo-chip.gem-inactive{opacity:.35;filter:grayscale(1);}
   .logo-switch .header-logo-chip.gem-active{box-shadow:0 0 0 2px var(--accent-dark);}
+  /* Umschalter zwischen Hausanschluss- und Rohrbruch-Erfassung: eigene Farbe je nach Ziel-Modus,
+     zeigt an, wohin ein Klick wechselt (nicht, in welchem Modus man gerade ist). */
+  .mode-switch-bar{padding:10px 18px;text-align:center;font-weight:600;font-size:14px;
+    color:#fff;cursor:pointer;transition:filter .15s;}
+  .mode-switch-bar:active{filter:brightness(.9);}
+  .mode-switch-bar.to-rohrbruch{background:var(--danger);}
+  .mode-switch-bar.to-hausanschluss{background:var(--accent-dark);}
   header h1{font-size:16px;margin:0;font-weight:600;white-space:nowrap;overflow:hidden;
     text-overflow:ellipsis;min-width:0;}
   header button{background:rgba(255,255,255,.18);border:none;color:#fff;padding:8px 12px;
@@ -157,10 +164,11 @@
       <div class="header-logo-chip"><img src="assets/logo-trinkwasser.png" alt="Trinkwasser"></div>
     </div>
     <div class="header-title-row">
-      <h1>Hausanschluss Erfassung</h1>
+      <h1 id="appTitle">Hausanschluss Erfassung</h1>
       <button id="exportBtn">Export</button>
     </div>
   </header>
+  <div id="modeSwitchBar" class="mode-switch-bar" role="button" tabindex="0"></div>
   <main>
     <div class="search">
       <input type="text" id="searchInput" placeholder="Suche nach Ort, Kassenzeichen, Notiz…">
