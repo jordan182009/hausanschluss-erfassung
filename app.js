@@ -118,6 +118,7 @@ const wvaInstDatumUnterschrift = document.getElementById('wvaInstDatumUnterschri
 const wvaAntragseingang = document.getElementById('wvaAntragseingang');
 const wvaAbnahmeDatum = document.getElementById('wvaAbnahmeDatum');
 const wvaInterneVermerk = document.getElementById('wvaInterneVermerk');
+const wvaEmailBtn = document.getElementById('wvaEmailBtn');
 const fBearbeiter = document.getElementById('fBearbeiter');
 const fStrasse = document.getElementById('fStrasse');
 const fKassenzeichen = document.getElementById('fKassenzeichen');
@@ -403,6 +404,118 @@ function applyWvaDefaultsForNewRohrbruch() {
   wvaEigDatum.value = heute;
   wvaAntragseingang.value = heute;
 }
+
+// ---- Auftrag Trinkwasserversorgung per E-Mail (mailto) ----
+// Reine Text-Zusammenfassung im Mailtext, da mailto-Links keine Anhänge (Fotos/PDF)
+// unterstützen. Empfänger bleibt leer, der Mitarbeiter trägt ihn im Mail-Programm ein.
+const WVA_ART_LABELS = {
+  Herstellung: 'Herstellung (neuer Anschluss)', Erneuerung: 'Erneuerung',
+  Aenderung: 'Änderung', Beseitigung: 'Beseitigung'
+};
+
+function buildWvaEmail() {
+  const zeilen = [];
+  const add = (label, value) => { if (value) zeilen.push(`${label}: ${value}`); };
+  const ort = computeOrtDisplay();
+
+  zeilen.push('AUFTRAG TRINKWASSERVERSORGUNG – STADT LINDENFELS');
+  zeilen.push('(Auftrag nach der Wasserversorgungssatzung – WVS, Rohrbruch an der Hausanschlussleitung)');
+  zeilen.push('');
+  add('Ort', ort);
+  add('Kassenzeichen', fKassenzeichen.value.trim());
+  add('Erfasst von', fBearbeiter.value.trim());
+  zeilen.push('');
+
+  zeilen.push('Art des Auftrags: ' + (WVA_ART_LABELS[getRadioValue('wvaArt')] || '–'));
+  add('Grund', wvaGrund.value.trim());
+  zeilen.push('');
+
+  zeilen.push('1. Baugrundstück');
+  add('Straße, Haus-Nr.', fStrasse.value.trim());
+  add('Gemarkung', wvaGemarkung.value.trim());
+  add('Flur', wvaFlur.value.trim());
+  add('Flurstück(e)', wvaFlurstueck.value.trim());
+  zeilen.push('');
+
+  zeilen.push('2. Bauvorhaben – Art und Nutzung');
+  const nutzungen = [];
+  if (wvaNutzungWohn.checked) nutzungen.push('Wohngebäude' + (wvaWohnungen.value.trim() ? ' mit ' + wvaWohnungen.value.trim() + ' Wohnung/en' : ''));
+  if (wvaNutzungMisch.checked) nutzungen.push('Mischnutzung');
+  if (wvaNutzungGewerbe.checked) nutzungen.push('Gewerbe' + (wvaGewerbeArt.value.trim() ? ' (' + wvaGewerbeArt.value.trim() + ')' : ''));
+  zeilen.push(nutzungen.length ? nutzungen.join(', ') : '–');
+  zeilen.push('');
+
+  zeilen.push('3. Bauwasser benötigt?');
+  const bw = getRadioValue('wvaBauwasser');
+  zeilen.push(bw === 'ja' ? 'Ja, ab: ' + (wvaBauwasserAb.value || '–') : (bw === 'nein' ? 'Nein' : '–'));
+  zeilen.push('');
+
+  zeilen.push('4. Brauchwassernutzungsanlage');
+  const brauch = getRadioValue('wvaBrauchwasser');
+  if (brauch === 'vorhanden') {
+    const verwendung = [];
+    if (wvaBrauchGarten.checked) verwendung.push('Gartenbewässerung');
+    if (wvaBrauchToilette.checked) verwendung.push('Toilettenspülung');
+    if (wvaBrauchWaschmaschine.checked) verwendung.push('Waschmaschinen');
+    if (wvaBrauchSonstige.value.trim()) verwendung.push(wvaBrauchSonstige.value.trim());
+    zeilen.push('Vorhanden oder geplant' + (verwendung.length ? ' – ' + verwendung.join(', ') : ''));
+  } else if (brauch === 'nicht_vorhanden') {
+    zeilen.push('Nicht vorhanden/geplant');
+  } else {
+    zeilen.push('–');
+  }
+  zeilen.push('');
+
+  zeilen.push('5. Fachtechnische Angaben zur Wasserversorgung');
+  add('5.1 Fließdruck (bar)', wvaFliessdruck.value.trim());
+  add('5.2 Spitzendurchfluss Vs (l/s)', wvaSpitzendurchfluss.value.trim());
+  add('5.3 Höchste Entnahmestelle (m)', wvaHoechsteEntnahme.value.trim());
+  add('Vermerk Installateur', wvaVermerkInstallateur.value.trim());
+  add('5.4 Größe des Wasserzählers', wvaZaehlergroesse.value.trim());
+  add('5.5 Anschlussnennweite', wvaAnschlussnennweite.value.trim());
+  add('5.6 Rohrmaterial', wvaRohrmaterial.value.trim());
+  add('Vermerk Wasserwerk', wvaVermerkWasserwerk.value.trim());
+  zeilen.push('');
+
+  zeilen.push('6. Anlagen zum Auftrag');
+  const anlagen = [];
+  if (wvaAnlageLageplan.checked) anlagen.push('Lageplan (Kataster) 1:500');
+  if (wvaAnlageGrundriss.checked) anlagen.push('Grundriss 1:100');
+  if (wvaAnlageBetriebsbeschreibung.checked) anlagen.push('Betriebsbeschreibung');
+  if (wvaAnlageBaulast.checked) anlagen.push('Baulasterklärung/Grunddienstbarkeit');
+  zeilen.push(anlagen.length ? anlagen.join(', ') : '–');
+  zeilen.push('');
+
+  zeilen.push('8. Grundstückseigentümer/in');
+  add('Name, Vorname', wvaEigName.value.trim());
+  add('Adresse', wvaEigAdresse.value.trim());
+  add('Telefon', wvaEigTelefon.value.trim());
+  add('Email', wvaEigEmail.value.trim());
+  add('Datum', wvaEigDatum.value);
+  zeilen.push('Einverständnis WVS eingesehen: ' + (wvaEinverstaendnis.checked ? 'Ja' : 'Nein'));
+  zeilen.push('');
+
+  zeilen.push('9. Wasserinstallateur');
+  add('Name/Firma', wvaInstName.value.trim());
+  add('Adresse', wvaInstAdresse.value.trim());
+  add('Telefon', wvaInstTelefon.value.trim());
+  add('Email', wvaInstEmail.value.trim());
+  add('Datum/Unterschrift/Stempel', wvaInstDatumUnterschrift.value.trim());
+  zeilen.push('');
+
+  zeilen.push('10. Interne Vermerke');
+  add('Antragseingang', wvaAntragseingang.value);
+  add('Abnahme durch Wasserwerk am', wvaAbnahmeDatum.value);
+  add('Vermerk', wvaInterneVermerk.value.trim());
+
+  const subject = 'Auftrag Trinkwasserversorgung – Rohrbruch Hausanschlussleitung' + (ort ? ' – ' + ort : '');
+  return { subject, body: zeilen.join('\n') };
+}
+
+wvaEmailBtn.addEventListener('click', () => {
+  const { subject, body } = buildWvaEmail();
+  window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+});
 
 // ---- Neuer Eintrag: Gemeinde- und (im Rohrbruch-Modus) Leitungsart-Abfrage vorschalten ----
 function proceedToNewForm() {
