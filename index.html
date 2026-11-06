@@ -44,6 +44,9 @@
   .mode-switch-bar:active{filter:brightness(.9);}
   .mode-switch-bar.to-rohrbruch{background:var(--danger);}
   .mode-switch-bar.to-hausanschluss{background:var(--accent-dark);}
+  /* Link zur Viehtränken-Dokumentation: nur in der Hausanschluss-Erfassung sichtbar */
+  .doc-link{display:block;padding:10px 18px;text-align:center;font-weight:600;font-size:15px;color:var(--accent-dark);background:#fff;border-bottom:1px solid var(--border);text-decoration:none;}
+  .mode-switch-bar.to-hausanschluss + .doc-link{display:none;}
   header h1{font-size:16px;margin:0;font-weight:600;white-space:nowrap;overflow:hidden;
     text-overflow:ellipsis;min-width:0;}
   header button{background:rgba(255,255,255,.18);border:none;color:#fff;padding:8px 12px;
@@ -195,6 +198,7 @@
     </div>
   </header>
   <div id="modeSwitchBar" class="mode-switch-bar" role="button" tabindex="0"></div>
+  <a href="viehtraenke.html" class="doc-link">📋 Dokumentation: Viehtränke an der Kundenanlage</a>
   <main>
     <div class="search">
       <input type="text" id="searchInput" placeholder="Suche nach Ort, Kassenzeichen, Notiz…">
