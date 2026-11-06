@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hausanschluss-cache-v23';
+const CACHE_NAME = 'hausanschluss-cache-v24';
 const TILE_CACHE_NAME = 'hausanschluss-tiles-v1';
 const ASSETS = [
   './', './index.html', './viehtraenke.html', './app.js', './manifest.json', './icon.svg',
@@ -8,7 +8,9 @@ const ASSETS = [
   './assets/leaflet/leaflet.css', './assets/leaflet/leaflet.js',
   './assets/leaflet/images/marker-icon.png', './assets/leaflet/images/marker-icon-2x.png',
   './assets/leaflet/images/marker-shadow.png', './assets/leaflet/images/layers.png',
-  './assets/leaflet/images/layers-2x.png'
+  './assets/leaflet/images/layers-2x.png',
+  './assets/merkblaetter/merkblatt-viehtraenken-lautertal.pdf',
+  './assets/merkblaetter/hinweis-erdung-lindenfels.pdf'
 ];
 // Kartenkacheln von OpenStreetMap werden separat (in einem eigenen, unbegrenzt
 // wachsenden Cache) zwischengespeichert, damit bereits angesehene Kartenausschnitte
