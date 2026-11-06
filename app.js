@@ -198,11 +198,26 @@ function populateOrtsteilOptions(gemeinde) {
     + '<option value="__custom__">Sonstiges…</option>';
 }
 
+const MERKBLAETTER = {
+  'Lindenfels': [
+    { label: 'Hinweis Erdung/Potenzialausgleich', file: 'assets/merkblaetter/hinweis-erdung-lindenfels.pdf' },
+    { label: 'Zählerbügeleinbau (DIN 1988 / DVGW W406)', file: 'assets/merkblaetter/merkblatt-zaehlerbuegeleinbau-lindenfels.pdf' }
+  ],
+  'Lautertal': []
+};
+function renderMerkblaetter() {
+  const box = document.getElementById('merkblattBox');
+  if (!box) return;
+  const liste = MERKBLAETTER[aktuelleGemeinde] || [];
+  box.innerHTML = liste.map(m => `<a href="${m.file}" target="_blank" rel="noopener">📄 ${m.label}</a>`).join('');
+}
+
 function updateLogoHighlight() {
   chipLindenfels.classList.toggle('gem-active', aktuelleGemeinde === 'Lindenfels');
   chipLindenfels.classList.toggle('gem-inactive', aktuelleGemeinde === 'Lautertal');
   chipLautertal.classList.toggle('gem-active', aktuelleGemeinde === 'Lautertal');
   chipLautertal.classList.toggle('gem-inactive', aktuelleGemeinde === 'Lindenfels');
+  renderMerkblaetter();
 }
 
 function setAktuelleGemeinde(g) {

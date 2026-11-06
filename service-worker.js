@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hausanschluss-cache-v26';
+const CACHE_NAME = 'hausanschluss-cache-v27';
 const TILE_CACHE_NAME = 'hausanschluss-tiles-v1';
 const ASSETS = [
   './', './index.html', './viehtraenke.html', './app.js', './manifest.json', './icon.svg',
@@ -10,6 +10,7 @@ const ASSETS = [
   './assets/leaflet/images/marker-shadow.png', './assets/leaflet/images/layers.png',
   './assets/leaflet/images/layers-2x.png',
   './assets/merkblaetter/merkblatt-viehtraenken-lautertal.pdf',
+  './assets/merkblaetter/merkblatt-viehtraenken-lindenfels.pdf',
   './assets/merkblaetter/hinweis-erdung-lindenfels.pdf',
   './assets/merkblaetter/merkblatt-zaehlerbuegeleinbau-lindenfels.pdf'
 ];

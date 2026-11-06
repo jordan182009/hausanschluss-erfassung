@@ -47,6 +47,13 @@
   /* Link zur Viehtränken-Dokumentation: nur in der Hausanschluss-Erfassung sichtbar */
   .doc-link{display:block;padding:10px 18px;text-align:center;font-weight:600;font-size:15px;color:var(--accent-dark);background:#fff;border-bottom:1px solid var(--border);text-decoration:none;}
   .mode-switch-bar.to-hausanschluss + .doc-link{display:none;}
+  /* Merkblätter-Liste: passt sich der aktuell gewählten Gemeinde an, nur in der Hausanschluss-Erfassung sichtbar */
+  #merkblattBox{display:flex;flex-wrap:wrap;gap:8px;padding:8px 18px 12px;background:#fff;border-bottom:1px solid var(--border);}
+  #merkblattBox:empty{display:none;padding:0;border-bottom:none;}
+  #merkblattBox a{background:#eaf6ee;border:1px solid #c9e8d3;color:var(--accent-dark);text-decoration:none;
+    font-size:13px;font-weight:600;padding:7px 11px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;}
+  #merkblattBox a:active{background:#d9f0e1;}
+  .mode-switch-bar.to-hausanschluss ~ #merkblattBox{display:none;}
   header h1{font-size:16px;margin:0;font-weight:600;white-space:nowrap;overflow:hidden;
     text-overflow:ellipsis;min-width:0;}
   header button{background:rgba(255,255,255,.18);border:none;color:#fff;padding:8px 12px;
@@ -199,6 +206,7 @@
   </header>
   <div id="modeSwitchBar" class="mode-switch-bar" role="button" tabindex="0"></div>
   <a href="viehtraenke.html" class="doc-link">📋 Dokumentation: Viehtränke an der Kundenanlage</a>
+  <div id="merkblattBox"></div>
   <main>
     <div class="search">
       <input type="text" id="searchInput" placeholder="Suche nach Ort, Kassenzeichen, Notiz…">
