@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hausanschluss-cache-v25';
+const CACHE_NAME = 'hausanschluss-cache-v26';
 const TILE_CACHE_NAME = 'hausanschluss-tiles-v1';
 const ASSETS = [
   './', './index.html', './viehtraenke.html', './app.js', './manifest.json', './icon.svg',
